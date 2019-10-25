@@ -1,5 +1,8 @@
-# MAPPING
-All code related to mapping paper located here
+# MAPPING METHODS
+- ordered in relation to flow of paper
+
+
+path = https://mfpfox.github.io/MAPPING/
 
 [nature_map2_2018](https://mfpfox.github.io/MAPPING/19_08_26_Nature_Cpos_Kpos_for_MAPpaper.html)
 
