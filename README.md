@@ -1,5 +1,12 @@
 # MAPPING METHODS
-- ordered in relation to flow of paper
+- all markdown files related to project
+
+### hoffman 
+1. 19_10_13_BUG_CADDmapped_targets.ipynb 
+2. 19_10_13_COORDINATES_CADDhg19_mapping.ipynb   
+3. 19_10_13_COORDINATES_dbNSFP4a_filtering_v2.ipynb 
+
+
 
 
 path = https://mfpfox.github.io/MAPPING/
