@@ -1,5 +1,15 @@
-# MAPPING
-All code related to mapping paper located here
+# MAPPING METHODS
+- all markdown files related to project
+
+### hoffman 
+1. 19_10_13_BUG_CADDmapped_targets.ipynb 
+2. 19_10_13_COORDINATES_CADDhg19_mapping.ipynb   
+3. 19_10_13_COORDINATES_dbNSFP4a_filtering_v2.ipynb 
+
+
+
+
+path = https://mfpfox.github.io/MAPPING/
 
 [nature_map2_2018](https://mfpfox.github.io/MAPPING/19_08_26_Nature_Cpos_Kpos_for_MAPpaper.html)
 
