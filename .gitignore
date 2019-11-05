@@ -5,3 +5,16 @@
 *.txt
 *.csv
 .ipynb_checkpoints/
+*.pdb
+*.pse
+*.mov
+*.png
+*.svg
+*.zip
+*.pdf
+*.pptx
+*.cif
+PDB_mapped_score/Consurf_2bh9_G6PD/
+PDB_mapped_score/Consurf_chainA_casp8/
+PDB_mapped_score/Consurf_chainB_casp8/
+PDB_mapped_score/LIST_scores/
