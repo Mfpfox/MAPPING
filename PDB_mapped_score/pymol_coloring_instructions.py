@@ -60,6 +60,8 @@ from pymol import stored
 import re, sys
 import pymol 
 
+# change working dir
+
 # view colors
 iterate all, print(color)
 iterate all, print(b)

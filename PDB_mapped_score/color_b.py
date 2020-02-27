@@ -12,7 +12,7 @@ from pymol import cmd
 # run this after :
   # run data2bfactor.py
   # data2b_res 5ocg
-# run color_b.py
+  # run color_b.py
   # color_b 5ocg
 
 # change min and max for molecule

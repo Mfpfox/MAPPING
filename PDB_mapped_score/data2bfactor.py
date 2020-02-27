@@ -216,7 +216,7 @@ SEE ALSO
 # hardcoded these options
 # change data_file for specific mole
 # byResidue_chB_3kjn_casp8.txt
-def data2b_res(mol, data_file='byResidue_chA_3kjn_casp8.txt', property='b', quiet=0):
+def data2b_res(mol, data_file='byResidue_2bh9_g6pd.txt', property='b', quiet=0):
 
     """
 DESCRIPTION
