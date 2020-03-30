@@ -57,8 +57,7 @@ byResidue_3kjn_casp8.txt
 
 # 1. SET WORKING DIR IN PYMOL
 from pymol import stored
-import re, sys
-import pymol 
+import re, sys, pymol 
 
 # change working dir
 
@@ -111,6 +110,26 @@ then fetch ____
 >alphaToAll 4jj7
 #>alphaToAll "4jj7"
 
+
+
+------ opened g6pd for map panel 5 pics ----------------------
+# picturs of g6pd for paper...
+
+# load packages and set wd
+run alpha2all.py
+alphaToAll 2bh9
+# saved this since now alpha C and other atom b factors all match cadd
+spectrum b, white gray black, 2bh9
+# Spectrum: range (0.00000 to 35.00000)
+# surface now matches!!! worked
+# then when i wanted to show side chain wire, the color was not correct, so under color i selected 
+'ramp' --> 'ramp_obj' which is what 'spectrum b' set
+
+------------------------------------------
+
+
+
+
 -------CASP8 again-------
 # selection chain A and chain B, right click actions, copy to object, new
 >run loadBfactors.py  # edit script to have chain specifc scores
@@ -140,6 +159,11 @@ select active, byres all within 5 of inhibitors
 
 # select all cys in a selected object, copy to new object!
 sel cysteines, resn cys 
+
+# To save
+move--program--scene loop- steady. 
+
+each scene has to have motion and time appended to it. the program scene loop adds time to each scene. like OOP each scene is an object. 
 
 # preset displacts in action,
 # CONSURF ran consurf_new.py on .pdb loaded from results output folder
