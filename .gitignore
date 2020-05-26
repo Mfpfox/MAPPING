@@ -1,8 +1,8 @@
 .DS_Store
 *.docx
-/PANEL_2/*
-/old_version_paper_section_writing/*
-/HTML_before_CLEANUP/*
+PANEL_2/*
+old_version_paper_section_writing/*
+HTML_before_CLEANUP/*
 *.xlsx
 .idea
 *.pyc
