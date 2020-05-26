@@ -1,6 +1,7 @@
 .DS_Store
 *.docx
-PANEL_2/
+PANEL_2/*
+HTML_before_CLEANUP/*
 *.xlsx
 .idea
 *.pyc
