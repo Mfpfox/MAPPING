@@ -14,12 +14,12 @@ path = https://mfpfox.github.io/MAPPING/
 [C_stable_UKBID_SEARCH](https://mfpfox.github.io/MAPPING/C_stable_UKBID_SEARCH.html)
 
 scripts:
-    - Pmap_ACCOUNTING.py
-    - Pmap_chemoproteomic_2012.py
-    - Pmap_filter_df.py
-    - Pmap_found_notfound_IDcheck.py
-    - Pmap_make_pos_dict.py
-    - processUniprotFasta.py
+- Pmap_ACCOUNTING.py
+- Pmap_chemoproteomic_2012.py
+- Pmap_filter_df.py
+- Pmap_found_notfound_IDcheck.py
+- Pmap_make_pos_dict.py
+- processUniprotFasta.py
 
 ---
 
@@ -28,11 +28,11 @@ scripts:
 [B_2012_to_2018_intraUKB_mapping](https://mfpfox.github.io/MAPPING/B_2012_to_2018_intraUKB_mapping.html)
 
 scripts:
-    - Pmap_CANONICAL_ISO_COUNTS.py
-    - Pmap_filteron_posID.py
-    - Pmap_mismap_score_UKBvsUKB.py
-    - Pmap_pos_check.py
-    - Pmap_protein_sequence_comparison.py
+- Pmap_CANONICAL_ISO_COUNTS.py
+- Pmap_filteron_posID.py
+- Pmap_mismap_score_UKBvsUKB.py
+- Pmap_pos_check.py
+- Pmap_protein_sequence_comparison.py
 
 ---
 
@@ -57,13 +57,13 @@ scripts:
 [UKB_idat_heatmap](https://mfpfox.github.io/MAPPING/UKB_idat_heatmap.html)
 
 scripts:
-    - Pmap_calc_multimapping.py
-    - Pmap_ensembl_fasta.py
-    - Pmap_make_Ensembl_multimap_df.py
-    - Pmap_make_groupby_df_sets.py
-    - Pmap_MISMAP_score_funx.py
-    - Pmap_mismap_score_UKBvsENSP.py
-    - Pmap_multimapping_fig.py
+- Pmap_calc_multimapping.py
+- Pmap_ensembl_fasta.py
+- Pmap_make_Ensembl_multimap_df.py
+- Pmap_make_groupby_df_sets.py
+- Pmap_MISMAP_score_funx.py
+- Pmap_mismap_score_UKBvsENSP.py
+- Pmap_multimapping_fig.py
 
 ---
 
@@ -82,20 +82,20 @@ scripts:
 [Rfig_py_correlation_heatmaps](https://mfpfox.github.io/MAPPING/Rfig_py_correlation_heatmaps.html)
 
 scripts:
-    - Pmap_accFilter_description.py
-    - Pmap_CADD_max_mean.py
-    - Pmap_correlation_plots.py
-    - Pmap_dbNSFP_CADD_merge_DECT19.py
-    - Pmap_dbNSFP_parselabeledID.py
-    - Pmap_get_maxmean_CADD.py
-    - Pmap_missense_annotations_QC.py
-    - Pmap_pie.py
-    - Pmap_pos_overlap_CADD.py
-    - Pmap1_parseID_correction.py
-    - Pmap2_dbNSFP_CysLysfilter.py
-    - Pmap3_findtargetmatch_dbNSFP.py
-    - Pmap4_dbNSFP_mapped_CADD19.py
-    - Pmap5_CADDoutput_chemoproteomics.py
+- Pmap_accFilter_description.py
+- Pmap_CADD_max_mean.py
+- Pmap_correlation_plots.py
+- Pmap_dbNSFP_CADD_merge_DECT19.py
+- Pmap_dbNSFP_parselabeledID.py
+- Pmap_get_maxmean_CADD.py
+- Pmap_missense_annotations_QC.py
+- Pmap_pie.py
+- Pmap_pos_overlap_CADD.py
+- Pmap1_parseID_correction.py
+- Pmap2_dbNSFP_CysLysfilter.py
+- Pmap3_findtargetmatch_dbNSFP.py
+- Pmap4_dbNSFP_mapped_CADD19.py
+- Pmap5_CADDoutput_chemoproteomics.py
 
 ---
 
@@ -106,7 +106,7 @@ scripts:
 [R_CADD_max_mean_position_score](https://mfpfox.github.io/MAPPING/R_CADD_max_mean_position_score.html)
 
 scripts:
-    - Pmap_ultimate_UKB.py
+- Pmap_ultimate_UKB.py
 
 ---
 
