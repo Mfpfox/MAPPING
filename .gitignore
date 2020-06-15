@@ -8,6 +8,7 @@ HTML_before_CLEANUP/*
 *.pyc
 *__pycache__*
 *.txt
+*.ai
 *.csv
 .ipynb_checkpoints/
 *.pdb
