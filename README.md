@@ -2,11 +2,7 @@
 - code is organized by main text sections 1-5
 - path = https://mfpfox.github.io/MAPPING/
 
-*All code in repo is property of [Backus lab]() and [Arboleda lab]() at UCLA*
-
-All python packages used: 
-
-All R packages used: 
+*This project is a collaboration between the [Backus lab]() and [Arboleda lab]() at UCLA*
 
 
 ---
