@@ -1,10 +1,7 @@
 # Welcome to MAP project repo 
-- code is organized by main text sections 1-5
-- path = https://mfpfox.github.io/MAPPING/
+This project is a collaboration between the [Backus lab](https://www.backuslab.com/) and [Arboleda lab](https://www.arboledalab.org/) at UCLA. Our paper, **From Chemoproteomic-Detected Amino Acids to Genomic Coordinates: Insights into Precise Multi-omic Data Integration**, can be found on [bioRxiv](https://www.biorxiv.org/content/10.1101/2020.07.03.186007v1). 
 
-*This project is a collaboration between the [Backus lab]() and [Arboleda lab]() at UCLA*
-
-
+#### Scripts are organized by paper sections (1-5)
 ---
 
 **[1]**
@@ -62,4 +59,6 @@
 **[5]**
 
 - Pmap_ultimate_UKB.py
+
+---
 
