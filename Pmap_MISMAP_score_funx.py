@@ -1,71 +1,66 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# adapted code from markdown F
-
-# 2 versions!
-
-# 1 for all ENSP, 1 prosequence per row
-# df85 = mismap_score_allprosequence(v85, UKB)
-
-# 1 for unique ENSP, list of prosequence per row (see markdown J)
-# df85 = mismap_score_unique_prosequences(v85, UKB)
-
-
 '''
+[F] 2 versions!
+
+    1. for all ENSP, 1 prosequence per row
+        ex. df85 = mismap_score_allprosequence(v85, UKB)
+
+    2. for unique ENSP, list of prosequence per row (see markdown J)
+        ex. df85 = mismap_score_unique_prosequences(v85, UKB)
+
 VERSION 1
-shape ENSEMBL df:  (10183, 21)
-shape ukb df:  (3953, 6)
-shape post merge:  (10183, 26)
-final df shape:  (10183, 34)
----
-shape ENSEMBL df:  (10395, 21)
-shape ukb df:  (3953, 6)
-shape post merge:  (10395, 26)
-final df shape:  (10395, 34)
----
-shape ENSEMBL df:  (10612, 21)
-shape ukb df:  (3953, 6)
-shape post merge:  (10612, 26)
-final df shape:  (10612, 34)
----
-shape ENSEMBL df:  (10663, 21)
-shape ukb df:  (3953, 6)
-shape post merge:  (10663, 26)
-final df shape:  (10663, 34)
----
-shape ENSEMBL df:  (10564, 21)
-shape ukb df:  (3953, 6)
-shape post merge:  (10564, 26)
-final df shape:  (10564, 34)
-'''
+    shape ENSEMBL df:  (10183, 21)
+    shape ukb df:  (3953, 6)
+    shape post merge:  (10183, 26)
+    final df shape:  (10183, 34)
+    ---
+    shape ENSEMBL df:  (10395, 21)
+    shape ukb df:  (3953, 6)
+    shape post merge:  (10395, 26)
+    final df shape:  (10395, 34)
+    ---
+    shape ENSEMBL df:  (10612, 21)
+    shape ukb df:  (3953, 6)
+    shape post merge:  (10612, 26)
+    final df shape:  (10612, 34)
+    ---
+    shape ENSEMBL df:  (10663, 21)
+    shape ukb df:  (3953, 6)
+    shape post merge:  (10663, 26)
+    final df shape:  (10663, 34)
+    ---
+    shape ENSEMBL df:  (10564, 21)
+    shape ukb df:  (3953, 6)
+    shape post merge:  (10564, 26)
+    final df shape:  (10564, 34)
 
-'''
 # VERSION 2
-shape ENSEMBL df:  (3953, 21)
-shape ukb df:  (3953, 6)
-shape post merge:  (3953, 26)
-final df shape:  (3953, 34)
----
-shape ENSEMBL df:  (3953, 21)
-shape ukb df:  (3953, 6)
-shape post merge:  (3953, 26)
-final df shape:  (3953, 34)
----
-shape ENSEMBL df:  (3953, 21)
-shape ukb df:  (3953, 6)
-shape post merge:  (3953, 26)
-final df shape:  (3953, 34)
----
-shape ENSEMBL df:  (3953, 21)
-shape ukb df:  (3953, 6)
-shape post merge:  (3953, 26)
-final df shape:  (3953, 34)
----
-shape ENSEMBL df:  (3953, 21)
-shape ukb df:  (3953, 6)
-shape post merge:  (3953, 26)
-final df shape:  (3953, 34)
+    shape ENSEMBL df:  (3953, 21)
+    shape ukb df:  (3953, 6)
+    shape post merge:  (3953, 26)
+    final df shape:  (3953, 34)
+    ---
+    shape ENSEMBL df:  (3953, 21)
+    shape ukb df:  (3953, 6)
+    shape post merge:  (3953, 26)
+    final df shape:  (3953, 34)
+    ---
+    shape ENSEMBL df:  (3953, 21)
+    shape ukb df:  (3953, 6)
+    shape post merge:  (3953, 26)
+    final df shape:  (3953, 34)
+    ---
+    shape ENSEMBL df:  (3953, 21)
+    shape ukb df:  (3953, 6)
+    shape post merge:  (3953, 26)
+    final df shape:  (3953, 34)
+    ---
+    shape ENSEMBL df:  (3953, 21)
+    shape ukb df:  (3953, 6)
+    shape post merge:  (3953, 26)
+    final df shape:  (3953, 34)
 '''
 
 import os
@@ -78,7 +73,6 @@ def list2col(s, colname):
     fseries = pd.DataFrame(np.array(s).reshape(-1, 1))
     fseries.columns = [colname]
     return fseries
-
 
 def mismap_score_allprosequence(enspdf, uniprot):
     # new columns to add

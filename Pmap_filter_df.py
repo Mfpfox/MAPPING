@@ -3,9 +3,6 @@
 
 import sys
 import os
-sys.path.append("/Users/mariapalafox/Desktop/Toolbox")
-from all_funx import *
-# see also filter_by_col.py
 
 def addcolumnconditionalDrop(mapList, df, dfcol, newcol):
     mendel = []

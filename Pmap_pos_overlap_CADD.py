@@ -6,8 +6,6 @@
 import sys
 import csv
 import os
-
-sys.path.append("/u/home/m/mfpalafo/project-arboleda/Toolbox")
 from OpenTextFile import OpenTextFile
 
 # argv 1 is chr; 2 is position file that matches chr
@@ -23,7 +21,7 @@ header = next(dbfile)
 
 if assembly == 37:
     # path to cadd files
-    PATH = '/u/home/m/mfpalafo/project-arboleda/CADD/whole_genome_SNVs_w_Annotations/'
+    PATH = '/CADD/whole_genome_SNVs_w_Annotations/'
     # header = pos_hg19,chr,pos_ID
     header = ','.join(header) + ',' + 'Ref' + ',' + 'Alt' + ',' + 'Type' + ',' + 'Length' + ',' + 'AnnoType' + ',' + 'Consequence' + ',' + 'ConsScore' + ',' + 'ConsDetail' + ',' + 'GC' + ',' + 'CpG' + ',' + 'motifECount' + ',' + 'motifEName' + ',' + 'motifEHIPos' + ',' + 'motifEScoreChng' + ',' + 'oAA' + ',' + 'nAA' + ',' + 'GeneID' + ',' + 'FeatureID' + ',' + 'GeneName' + ',' + 'CCDS' + ',' + 'Intron' + ',' + 'Exon' + ',' + 'cDNApos' + ',' + 'relcDNApos' + ',' + 'CDSpos' + ',' + 'relCDSpos' + ',' + 'protPos' + ',' + 'relProtPos' + ',' + 'Domain' + ',' + 'Dst2Splice' + ',' + 'Dst2SplType' + ',' + 'minDistTSS' + ',' + 'minDistTSE' + ',' + 'SIFTcat' + ',' + 'SIFTval' + ',' + 'PolyPhenCat' + ',' + 'PolyPhenVal' + ',' + 'priPhCons' + ',' + 'mamPhCons' + ',' + 'verPhCons' + ',' + 'priPhyloP' + ',' + 'mamPhyloP' + ',' + 'verPhyloP' + ',' + 'GerpRS' + ',' + 'GerpRSpval' + ',' + 'GerpN' + ',' + 'GerpS' + ',' + 'Grantham' + ',' + 'Dist2Mutation' + ',' + 'Freq100bp' + ',' + 'Rare100bp' + ',' + 'Sngl100bp' + ',' + 'Freq1000bp' + ',' + 'Rare1000bp' + ',' + 'Sngl1000bp' + ',' + 'Freq10000bp' + ',' + 'Rare10000bp' + ',' + 'Sngl10000bp' + ',' + 'RawScore' + ',' + 'PHRED' + '\n'
     if postype == 'dect':
@@ -54,7 +52,7 @@ if assembly == 37:
                         csvWriter.writerow(result)
 
 if assembly == 38:
-    PATH = '/u/home/m/mfpalafo/project-arboleda/CADD/GRCh38/'
+    PATH = '/CADD/GRCh38/'
     # from h.tsv files on hoffman; header = pos_hg38,chr,pos_ID
     header = ','.join(header) + ',' + 'Ref' + ',' +'Alt' + ',' +'Type' + ',' +'Length' + ',' +'AnnoType' + ',' +'Consequence' + ',' +'ConsScore' + ',' +'ConsDetail' + ',' +'GC' + ',' +'CpG' + ',' +'motifECount' + ',' +'motifEName' + ',' +'motifEHIPos' + ',' +'motifEScoreChng' + ',' +'oAA' + ',' +'nAA' + ',' +'GeneID' + ',' +'FeatureID' + ',' +'GeneName' + ',' +'CCDS' + ',' +'Intron' + ',' +'Exon' + ',' +'cDNApos' + ',' +'relcDNApos' + ',' +'CDSpos' + ',' +'relCDSpos' + ',' +'protPos' + ',' +'relProtPos' + ',' +'Domain' + ',' +'Dst2Splice' + ',' +'Dst2SplType' + ',' +'minDistTSS' + ',' +'minDistTSE' + ',' +'SIFTcat' + ',' +'SIFTval' + ',' +'PolyPhenCat' + ',' +'PolyPhenVal' + ',' +'priPhCons' + ',' +'mamPhCons' + ',' +'verPhCons' + ',' +'priPhyloP' + ',' +'mamPhyloP' + ',' +'verPhyloP' + ',' +'GerpRS' + ',' +'GerpRSpval' + ',' +'GerpN' + ',' +'GerpS' + ',' +'Grantham' + ',' +'Dist2Mutation' + ',' +'Freq100bp' + ',' +'Rare100bp' + ',' +'Sngl100bp' + ',' +'Freq1000bp' + ',' +'Rare1000bp' + ',' +'Sngl1000bp' + ',' +'Freq10000bp' + ',' +'Rare10000bp' + ',' +'Sngl10000bp' + ',' +'RawScore' + ',' +'PHRED' + '\n'
     if postype == 'dect':

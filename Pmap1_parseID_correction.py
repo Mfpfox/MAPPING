@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# 10/13/19 Pmap_parseID_correction.py
 
 import pandas as pd
 import csv
@@ -21,7 +20,6 @@ def grabIDaapos(lsID, lspos, lsdet):
                     return result
     return('0')
 
-
 def main():
     filename = sys.argv[1]
     outfile = sys.argv[2]
@@ -38,7 +36,6 @@ def main():
         header.append('matched_UKBID')
         header.append('matched_aapos')
         header.append('matched_index')
-
         # create and write to outfile
         os.system("touch %s" % (outfile))
         with open(outfile, 'w') as out:
@@ -52,7 +49,6 @@ def main():
             lsID = uniprotIDs.split(";")
             lsAA = aapos.split(";")
             addme = grabIDaapos(lsID, lsAA, labelset)
-
             # if return is 0 go to next row
             # else add row to outfile
             if len(addme) == 3:

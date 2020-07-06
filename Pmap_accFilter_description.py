@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# how many IDs are in each dbNSFP derived chr file
-# how does this count compare to value counts dictionary of 3901 accessions with counts per chromosome?
 # getting all files unique ID count, shape, and name in new description file
 
 import os

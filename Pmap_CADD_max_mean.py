@@ -1,7 +1,5 @@
 # !/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# feb 18 2020 finding max and mean cadd score for given amino acid positions
-# recalculating G6PD without gain of stop codon included, 7 CK codon changes
 
 import os
 import sys

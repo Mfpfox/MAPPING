@@ -3,6 +3,7 @@
 # 
 
 os.chdir("/Users/mariapalafox/Box Sync/CODE_DATA/dir_MAPpaper/CADDmapped/ALL_CONSEQUENCES/")
+
 combo = pd.read_csv("MERGE_COMBO_cadd38corrected_1327386.csv")
 
 # DROP NAN ROWS IF USING ALL SCORES IN CORRELATION PLOT
@@ -52,8 +53,7 @@ detected lys misssense:  (41850, 30)
 total ck missense: 71391
 """
 
-
-# function for making spearman heat maps
+# function for spearman heat maps
 def make_corr_heat(df, savename):
     corr = df.corr(method='spearman')
     mask = np.zeros_like(corr)

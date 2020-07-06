@@ -1,17 +1,11 @@
 # !/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Pmap_filteron_posID.py
-# GOAL filtering already made CADD maxmean score files with detected and not detecte Cys and Lys positions for map paper. using updated count of uniprot IDs as 3,840 (number shared post dbNSFP mapping)
-
+# filtering using updated count of uniprot IDs as 3,840 (number shared post dbNSFP mapping)
 
 import os
 import sys
 import pandas as pd
-import argparse
-
-sys.path.append("/Users/mariapalafox/Desktop/Toolbox")
-from all_funx import *
 
 def filter_by_col(infil, outname, fil, filcol):
     inn = read_pd(infil)
@@ -45,18 +39,7 @@ def main():
     filter_by_col("CADDspecific_K_detected_63014x2rows.csv", "FILTERED_CADDspecific_K_detected_14925.csv", detfil, "pos_ID")
     # C detected 
     filter_by_col("CADDspecific_C_detected_43050x2rows.csv", "FILTERED_CADDspecific_C_detected_14925posID.csv", detfil, "pos_ID")
-
 main()
-"""
-# column is index not pos_ID
-"POSspecific_K_notdetected_maxmean_145027x2pos.csv"
-"POSspecific_C_notdetected_maxmean_34930x2pos.csv"
-"POSspecific_K_detected_maxmean_9002x2pos.csv"
-"POSspecific_C_detected_maxmean_6150x2pos.csv"
-"""
-
-
-
 
 
 

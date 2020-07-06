@@ -17,8 +17,6 @@ code creates 2 types of files for each amino acid subset (pantarget or reactivit
 import sys
 import os
 import pandas as pd
-sys.path.append("/Users/mariapalafox/Desktop/Toolbox")
-from all_funx import *
 
 os.chdir("/Users/mariapalafox/Box Sync/CODE_DATA/dir_MAPpaper/CYS_LYS_2012_to2018UKBpositions")
 
@@ -62,7 +60,6 @@ def position_overlap(aalist, chemdf, found_name, notfound_name):
     FALSEonly.to_csv(notfound_name,index=False)
     TRUEonly.reset_index(drop=True,inplace=True)
     TRUEonly.to_csv(found_name,index=False)
-
     return idset
 
 def main(): 
