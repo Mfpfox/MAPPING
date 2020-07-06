@@ -53,12 +53,15 @@ This project is a collaboration between the [Backus lab](https://www.backuslab.c
 - Pmap3_findtargetmatch_dbNSFP.py
 - Pmap4_dbNSFP_mapped_CADD19.py
 - Pmap5_CADDoutput_chemoproteomics.py
+- oddsRatio_detected_vs_notdet.R
 
 ---
 
 **[5]**
 
 - Pmap_ultimate_UKB.py
+- boxplot_reactivity.R
+- linePlot_G6PD.R
 
 ---
 
