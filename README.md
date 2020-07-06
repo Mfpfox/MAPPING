@@ -1,8 +1,7 @@
 # Welcome to MAP project repo 
 This project is a collaboration between the [Backus lab](https://www.backuslab.com/) and [Arboleda lab](https://www.arboledalab.org/) at UCLA. Our paper, **From Chemoproteomic-Detected Amino Acids to Genomic Coordinates: Insights into Precise Multi-omic Data Integration**, can be found on [bioRxiv](https://www.biorxiv.org/content/10.1101/2020.07.03.186007v1). 
 
-#### Scripts are organized by paper sections (1-5)
----
+#### Code is grouped by paper sections (1-5)
 
 **[1]**
 
@@ -13,8 +12,6 @@ This project is a collaboration between the [Backus lab](https://www.backuslab.c
 - Pmap_make_pos_dict.py
 - processUniprotFasta.py
 
----
-
 **[2]**
 
 - Pmap_CANONICAL_ISO_COUNTS.py
@@ -22,8 +19,6 @@ This project is a collaboration between the [Backus lab](https://www.backuslab.c
 - Pmap_mismap_score_UKBvsUKB.py
 - Pmap_pos_check.py
 - Pmap_protein_sequence_comparison.py
-
----
 
 **[3]**
 
@@ -34,8 +29,6 @@ This project is a collaboration between the [Backus lab](https://www.backuslab.c
 - Pmap_MISMAP_score_funx.py
 - Pmap_mismap_score_UKBvsENSP.py
 - Pmap_multimapping_fig.py
-
----
 
 **[4]**
 
@@ -55,13 +48,39 @@ This project is a collaboration between the [Backus lab](https://www.backuslab.c
 - Pmap5_CADDoutput_chemoproteomics.py
 - oddsRatio_detected_vs_notdet.R
 
----
-
 **[5]**
 
 - Pmap_ultimate_UKB.py
 - boxplot_reactivity.R
 - linePlot_G6PD.R
 
+**[Mapping module]**
+
+- maplib.py
+
 ---
+
+python packages used: 
+```python
+import os
+import sys
+import numpy as np
+import pandas as pd
+import csv
+from Bio import SeqIO
+from ast import literal_eval
+import difflib
+from statistics import mean
+import textdistance
+```
+
+R packages used: 
+```r
+library(ggplot2)
+library(ggpubr)
+library(dplyr)
+library(RColorBrewer)
+library(plotly)
+```
+
 
