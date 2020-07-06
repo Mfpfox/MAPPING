@@ -75,7 +75,7 @@ import textdistance
 ```
 
 R packages used: 
-```r
+```R
 library(ggplot2)
 library(ggpubr)
 library(dplyr)
