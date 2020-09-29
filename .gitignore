@@ -12,6 +12,8 @@ HTML_before_CLEANUP/*
 .idea
 *.pyc
 *__pycache__*
+*.tsv
+*.fa
 *.txt
 *.ai
 *.csv
