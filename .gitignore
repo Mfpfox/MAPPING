@@ -1,4 +1,13 @@
 HTML_before_CLEANUP/*
+data/*
+www/*
+install/*
+scratchPlot.R
+plotlyIdeas.R
+app.R
+CpDAAapp.Rproj
+*.Rmd
+uibackup.R
 MESSY_CODE/*
 README_MARKDOWNS/*
 .DS_Store
