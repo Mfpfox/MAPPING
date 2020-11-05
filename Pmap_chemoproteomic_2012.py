@@ -13,83 +13,85 @@ expected all positions to be matched in 4093 protein sequences. following this t
 
 code creates 2 types of files for each amino acid subset (pantarget or reactivity)- positions of detected CK found OR positions not all found per protein
 
+#os.chdir("/Users/mariapalafox/Box Sync/CODE_DATA/dir_MAPpaper/CYS_LYS_2012_to2018UKBpositions")
+
 """
 import sys
 import os
 import pandas as pd
+import argparse
+from maplib import *
 
-os.chdir("/Users/mariapalafox/Box Sync/CODE_DATA/dir_MAPpaper/CYS_LYS_2012_to2018UKBpositions")
+parser = argparse.ArgumentParser()
+parser.add_argument("fasta", help="FASTA to search list of CpDAA keys against, accepts UniProtKB, Gencode, and RefSeq files.")
+parser.add_argument("aalist", help=".csv file with column of CpDAA keys to search for in FASTA file sequences (e.g. 'P11313_K170').")
+parser.add_argument("outfile", help="name of excel file output with tabs for Found and NotFound CpDAA keys in reference FASTA (e.g. 'Cys_isoTOP2012')")
 
-def split_ID(df1, col):
-    new1 = df1[col].str.split("_", n=1, expand = True)
-    df1["ID"] = new1[0]
-    return df1
-
-def count_unique_IDs(df, col):
-    idset = set(df[col])
-    print("unique IDs in df: ", len(idset))
-    return idset
+args = parser.parse_args()
+fasta  = args.fasta
+aalist = args.aalist
+outfile = args.outfile
 
 # aalist is from fasta sequences, chemdf is chemoproteomic data subset
-def position_overlap(aalist, chemdf, found_name, notfound_name):
-    # create list of reactivity and pan target positions
+def CpDAA_position_check(): 
+
+    # import ukb fasta file
+
+
+    # convert to .csv file
+    
+
+    # make df of all AA pos keys (e.g. P11413_K170) input AA
+    
+
+
+    fastaC = pd.read_csv("sprot_11_2012_all_Cpos.csv")
+
+    #  all AA keys as list
+    aalist = list(fastaC.key_id)
+
+    ## file with CpDAA keys, column name assumed as "pos_ID"
+    chemdf = pd.read_csv("CYS_reactivity_11_2012IDs_1483.csv")
+
+# save as multi tab excel sheet instead
+    found_name = "pos_found_C_react.csv"
+    notfound_name = "pos_not_found_C_react.csv" 
+
+    # create list of detected keys
     subsetls = list(chemdf.pos_ID)
     print("chemo pos_ID length: ", len(subsetls))
+
     # overlap with positions from fasta sequences
     overlapAA = set(aalist).intersection(subsetls)
     print("overlapping AA's in chemoproteomic data subset: ", len(overlapAA))
+    
     # make dataframe with overlap results
     newls = list(overlapAA)
     newdf = pd.DataFrame(newls)
     newdf.columns = ['pos_ID']
+    
     # count unique ID
     splitdf = split_ID(newdf, 'pos_ID')
     idset = count_unique_IDs(splitdf, 'ID')
 
-    # label the subset data frame with new column whether its in fasta sequence or not
+    # labels chemoproteomic results df w/ col for whether key found in reference fasta file sequences
     done_overlapped = addcolumnconditional(overlapAA, chemdf, "pos_ID", "found_pos_ID")
 
-    # seperating True and False then saving False
+    # seperating True and False then saving as tabs of excel file
     TRUEonly = done_overlapped[done_overlapped["found_pos_ID"] == "True"]
     FALSEonly = done_overlapped[done_overlapped["found_pos_ID"] == "False"]
-    print("Found posID TRUE df shape: ", TRUEonly.shape)
-    print("Found posID FALSE df shape: ", FALSEonly.shape)
+    print("Found pos_ID keys in fasta reference seq: ", TRUEonly.shape)
+    print("Not found pos_ID keys in fasta reference seq: ", FALSEonly.shape)
 
     # saving dfs
     FALSEonly.reset_index(drop=True,inplace=True)
     FALSEonly.to_csv(notfound_name,index=False)
     TRUEonly.reset_index(drop=True,inplace=True)
     TRUEonly.to_csv(found_name,index=False)
-    return idset
 
-def main(): 
-    # subsets filtered for 4093 detected IDs overlapping 11_2012 fasta
-    cpan = pd.read_csv("CYS_pantarget_11_2012IDs_6157.csv")
-    crea = pd.read_csv("CYS_reactivity_11_2012IDs_1483.csv")
-    kpan = pd.read_csv("LYS_pantarget_11_2012IDs_8350.csv")
-    krea = pd.read_csv("LYS_reactivity_11_2012IDs_4576.csv")
-
-    # 11_2012 release with 4093 detected IDs
-    #ukbfasta = pd.read_csv("sprot_11_2012_detectedIDs_4093.csv")
-    fastaC = pd.read_csv("sprot_11_2012_all_Cpos.csv")
-    fastaK = pd.read_csv("sprot_11_2012_all_Kpos.csv")
-    # make into list with only pos_ID
-    allC = list(fastaC.key_id)
-    allK = list(fastaK.key_id)
-
-    print()
-    CRidset = position_overlap(allC, crea, "pos_found_C_react.csv", "pos_not_found_C_react.csv")
-    print()
-    CPidset = position_overlap(allC, cpan, "pos_found_C_pan.csv", "pos_not_found_C_pan.csv")
-    print()
-    KRidset = position_overlap(allK, krea, "pos_found_K_react.csv", "pos_not_found_K_react.csv")
-    print()
-    KPidset = position_overlap(allK, kpan, "pos_found_K_pan.csv", "pos_not_found_K_pan.csv")
-
-    totCid = set(list(CRidset) + list(CPidset))
+    totCid = set(list(idset))
     print("total Cys group IDs: ", len(totCid))
-    totKid = set(list(KRidset) + list(KPidset))
-    print("total Lye group IDs: ", len(totKid))
 
-    allIDs = set(list(totCid) + list(totKid))
-    print(len(allIDs))
+
+if __name__ == '__main__':
+    CpDAA_position_check()

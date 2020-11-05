@@ -1,6 +1,7 @@
 # !/usr/bin/env python3
 # -*- coding: utf-8 -*-
-#  Pmap functions
+#  functions referenced in README for .... 
+# link to github page: ....
 
 import os
 import sys
@@ -8,13 +9,53 @@ import numpy as np
 import pandas as pd
 import csv
 from Bio import SeqIO
-from ast import literal_eval # for mismap_score func
-import difflib # diff btw 2 strings
+from ast import literal_eval 
+import difflib 
 from statistics import mean
 import jellyfish
 import textdistance
 
-### Basics ###
+
+# [1]
+def UKBposID(df, IDcol, AAposCol):
+    # make uniprotID + AApos key column
+    df['pos_ID'] = df[IDcol].astype(str) + \
+        '_' + df[AAposCol].astype(str)
+    return(df)
+
+# [2]
+def add_thresholds(df):
+    # adding reactivity threshold labels, assumes colname 'reactivity'
+    # High no lower bound ... r <= 2
+    # Med 2 < r <= 5
+    # Low r > 5
+    # used for 2012 experiments
+    # for 2019 experiments first filtered out rows w/ r < 0.5
+    df.loc[df.reactivity <= 2, 'Threshold'] = 'High' 
+    df.loc[(df.reactivity > 2) & (df.reactivity <= 5), 'Threshold'] = 'Medium' 
+    df.loc[df.reactivity > 5, 'Threshold'] = 'Low'
+    return df
+
+# [3]
+def checkColumnValues(df, col):
+    print(df[col].value_counts().reset_index().rename(columns={'index':col, col:'Count'}))
+
+
+# from Pmap_chemoproteomic_2012.py
+def split_ID(df1, col):
+    new1 = df1[col].str.split("_", n=1, expand = True)
+    df1["ID"] = new1[0]
+    return df1
+
+def count_unique_IDs(df, col):
+    idset = set(df[col])
+    print("unique IDs in df: ", len(idset))
+    return idset
+
+
+
+
+
 
 def create_coordinate_id(df, chrr, pos, ref, alt):
     # variables are colnames of df

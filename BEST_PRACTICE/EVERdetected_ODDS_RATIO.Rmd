@@ -1,0 +1,308 @@
+---
+title: "EVER_DETECTED_ODDS_RATIO_shinyApp"
+author: "mfpfox"
+date: "10/1/2020"
+output: html_document
+---
+
+# WHY gnomAD? (paper notes)
+- new updated mutational model(o/e counts from model) found synonymous variants observed are accurately captured (r^2 = 0.958)
+- new model applied to detect depletion of predicted LOF variation by comparing # observed pLOF against expectation in data from 125,748 individuals
+- computed median of 17.3 expected pLOF variants per gene and found ~72.1% of genes have over 10 pLOF variants expected on the canonical transcript ( and increase from 13.2 and 62.8% in Exac)
+- exac smaller sample size required transformation of observed and expected values for # pLOF variants in each gene into the "probability of loss-of-function intolerance (pLI)": this metric estimates the probability that gene falls into the class of LoF-haploinsufficient genes (approx. 10% observed/expected variation) and **is ideally used as a dichotomous metric** producing 3,230 genes with pLI > 0.9
+
+- NEW refined model enables direct assessment of degree of intolerance to pLoF variation in each gene using the **continuous metric of the observed/expected (o/e) ratio and to estimate a confidence interval around the ratio.**
+  - for downstream analysis gnomAD uses upper bound fraction (LOEUF), **binned into deciles of ~1,920 genes each**
+  - 1 extreme of distribution we observe genes with very strong depletion of pLOF variation (first LOEUF decile **aggregate** o/e ratio of = ~6%, other splice and missense variants are also depleted to a lesser degree in the decile)
+  - other extreme, find genes tolerant to pLOF variation, some even harboring homozygous pLOF variation
+#### (from supplemental) summary of constraint: 
+- Binning LOEUF into deciles partitions all human genes by the number of observed and expected pLoFs, resulting in ~1920 genes per decile
+    - as expected, LOEUF decile correlates with the aggreate pLOF frequency
+    - mean o/e value is 0.537, meadian 0.482, with 1266 genes with a value of 0 (no plof observed).  HOWEVER, as we expect fewer than 5 plof variants in 498 of these genes with 0 o/e score, they INSTEAD use the LOEUF score described > exten. data fig 7b- which has a mean of 0.952 (median 0.911)
+    - for many analysis in manuscript, they filtered the dataset to genes where they expected over 10 pLof variants.  **This cutoff was chosen as the minimum number of expected pLOF variants that can result in membership in the most constrained bin (11.1 expected) or pli > 0.95 (9.43 expected)**
+    
+
+## gnomAD ortholog analysis and constraint
+- 390 genes with orthologs that are embryonically lethal upon heterozygous deletion in mouse
+  - found lower LOEUF score mean = 0.488 compared to remaining 19,314 genes (mean = 0.962, t-test= p- 10^-78)
+- also looked at 678 genes from essential human cell viability (CRISPR screens) and found depletion of pLOF variation (mean LOEUF = 0.63) compared to remaining genes (19,026 genes with mean LOEUF 0.964)
+- 859 non essential genes are more likely to be unconstrained (mean LOEUF = 1.34 compared to remaining 18,845 genes with mean LOEUF = 0.936)
+
+## gnomAD transcript expression analysis and constraint
+- investigated properties of genes and transcripts as a function of their tolerance to pLOF (LOEUF)
+- 1) **LOEUF correlates with a gene's degree of connection in protein interaction networks and functional characterization.**
+- used STRING datase v1.22 for ppi of all genes with at least 10 expected plof variants
+
+- 2) constrained genes are more likely to be ubiquitously expressed across 38 tissues in GTEx and have higher expression on average, consistent with previous results. 
+- additionally, found that the most constrained tx for each gene was typically the most highly expressed tx in tissues with disease relevance (supporting the need for tx - based variant interpretation)
+- GTEx v7 gene and isoform expression data, 2 pass alignment with STAR and isoform quantification with RSEM
+- calculated median isoform expression  (TPM) across individuals for all GTEX tissues **except** reproduction : endocervix, ectocervix, fallopian tube, prostate, uterus, ovary, testes, vagina), cell lines (transformed fibroblasts, transformed lymphocytes) and any tissue with less than 100 samples (bladder, brain cervicalc-1, spinal cord, brain substantia nigra, kidney cortex, minor salivary gland), resulting in 38 tissues for downstream analysis
+- computed # of tissues where transcript is express (defined by TPM > 0.3)
+- analysis shows # of tissues where the canonical tx is expressed in each LOEUF decile (fig. 4b)
+- SHOW the number of tissues where each transcirpt is expressed by its LOEUF decile, broken down by canonical tx and all tx (ext. data fig 8b)
+- ALSO found that the **constrained transcript accounts for most of a gene's expression (used 1790 genes containing at least 1 constrained tx, meaning a tx belonging to 1st decile)**
+  
+
+# GNOMAD 2.1.1: 
+- GRCh37
+- canonical transcript used to annotate gene constraint
+- canonical tx set by gencode v19, hg19, VEP v85
+- found "gencode.v19.metadata.SwissProt.txt" in gencode archives
+- most constrained LOEUF bin == pLI > 0.95 (expected 9.43)
+
+
+### exac release 1 info: 
+- VEP85
+- gencode v19 for canonical tx definition
+- release 0.3.1 uses VEP81 but still on v19 canonical transcript 
+
+
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(readr)
+library(scales)
+library(ggpubr)
+library(dplyr)
+library(RColorBrewer)
+library(tidyr)
+```
+
+
+# odds ratio for map paper
+1. gene level =  "v85seqChecked_merged_gnomAD_detectedIDs_4688_UKBIDs_14994_allCols.csv"
+  a. detected vs not detected IDs
+  b. Cys detected vs not detected IDs
+  c. Lys detected vs not dtected IDs
+  d. CYSLYS detected vs not detected IDs
+
+
+# GENE LEVEL CONTINGENCY TABLES AND FISHER STATS TABLES
+```{r}
+genedf <- read_csv("v85seqChecked_merged_gnomAD_ever_detectedIDs_4333_UKBIDs_16719_allCols.csv")
+gr = list('detectedK_UKBID', 'detectedC_UKBID', 'detectedCK_UKBID', 'detectedEVER_UKBID')
+for (i in gr)
+{
+  colname = i
+  genedf[[colname]] <- factor(genedf[[colname]], levels = c(
+    TRUE,
+    FALSE
+  ))
+}
+
+head(genedf)
+```
+# how many members in each of the defined oe_upper_bin labels
+- gnomad paper said about 1900 in each bin
+```{r}
+table(genedf$oe_lof_upper_bin)
+table(genedf$oe_lof_upper_bin_6)
+```
+# remaking bins: 
+- mis_oe
+- syn_oe
+- LOEUF
+- LOEUF_bins & oemis_bins & oesyn_bins
+
+```{r}
+genedf = mutate(genedf, LOEUF_bins=ntile(genedf$oe_lof_upper, 10))
+genedf = mutate(genedf, oemis_bins=ntile(genedf$oe_mis, 10))
+genedf = mutate(genedf, oesyn_bins=ntile(genedf$oe_syn, 10))
+table(genedf$LOEUF_bins)
+table(genedf$oemis_bins)
+table(genedf$oesyn_bins)
+```
+
+# handles for bottom decile in LOEUF and MOEUF0 and SOEUF0
+# handles for bottom decile in lof_o/e
+```{r}
+genedf$LOEUF0 <- ifelse(genedf$LOEUF_bins == 1, "True", "False")
+genedf$LOEUF0 <- factor(genedf$LOEUF0, levels = c(
+  "True",
+  "False"
+))
+
+genedf$MOEUF0 <- ifelse(genedf$oemis_bins == 1, "True", "False")
+genedf$MOEUF0 <- factor(genedf$MOEUF0, levels = c(
+  "True",
+  "False"
+))
+
+genedf$SOEUF0 <- ifelse(genedf$oesyn_bins == 1, "True", "False")
+genedf$SOEUF0 <- factor(genedf$SOEUF0, levels = c(
+  "True",
+  "False"
+))
+```
+
+```{r}
+summary(genedf)
+```
+
+
+# testing output of cys detected column and pli for contingency table
+```{r}
+#gr = list('detectedK_UKBID', 'detectedC_UKBID', 'detectedCK_UKBID', 'detectedEVER_UKBID')
+
+colid = "detectedK_UKBID"
+fisher_K <- table(genedf$LOEUF0, genedf[[colid]])
+testK <- matrix(fisher_K, nrow=1)
+testK
+fisher_K
+
+# detected  AA groups are CAPITAL TRUE FALSE, and LOEUF0 is lower case TF
+```
+
+# contingency table set up so row lables are TF for constraint and col labels are group membership
+## so numbers in order are 
+[1] in group constraint [2] in group not constraint ...etc. 
+
+[1] detected C and  constrained [2]  detected C and not constrained
+
+```{r}
+
+# MOEUF0 
+letters = c('detectedK_UKBID', 'detectedC_UKBID', 'detectedCK_UKBID', 'detectedEVER_UKBID')
+i = 1
+N = 4
+rrows <- list()
+for (i in i:N){
+  low = letters[i]
+  testX <- table(genedf$MOEUF0, genedf[[low]])
+  matrixX <- matrix(testX, nrow=1)
+  rrows[[i]] <- matrixX
+}
+final<- do.call(rbind, rrows)
+finaldf <- as.data.frame(final)
+write_csv(finaldf, "everDetected_contingency_MOEUF0.csv")
+
+# LOEUF0
+letters = c('detectedK_UKBID', 'detectedC_UKBID', 'detectedCK_UKBID', 'detectedEVER_UKBID')
+i = 1
+N = 4
+rrows <- list()
+for (i in i:N){
+  low = letters[i]
+  testX <- table(genedf$LOEUF0, genedf[[low]])
+  matrixX <- matrix(testX, nrow=1)
+  rrows[[i]] <- matrixX
+}
+final<- do.call(rbind, rrows)
+finaldf <- as.data.frame(final)
+write_csv(finaldf, "everDetected_contingency_LOEUF0.csv")
+
+# SOEUF0 
+letters = c('detectedK_UKBID', 'detectedC_UKBID', 'detectedCK_UKBID', 'detectedEVER_UKBID')
+i = 1
+N = 4
+rrows <- list()
+for (i in i:N){
+  low = letters[i]
+  testX <- table(genedf$SOEUF0, genedf[[low]])
+  matrixX <- matrix(testX, nrow=1)
+  rrows[[i]] <- matrixX
+}
+final<- do.call(rbind, rrows)
+finaldf <- as.data.frame(final)
+write_csv(finaldf, "everDetected_contingency_SOEUF0.csv")
+```
+
+```
+everDetected_contingency_SOEUF0.csv
+everDetected_contingency_LOEUF0.csv
+everDetected_contingency_MOEUF0.csv
+output = same file name except contingency == fisher
+```
+
+i think i edit them by hand in excel before reading in again. 
+- removed header in excel
+- added column for group
+
+
+```{r}
+analysis <- read.csv("everDetected_contingency_SOEUF0.csv", header=FALSE, sep=",") %>% 
+  setNames(c("group", "V1","V2","V3","V4")) %>% 
+  nest(-group) %>% 
+  mutate(matrix=map(data, ~matrix(unlist(.x), nrow=2))) %>% 
+  mutate(fisher = map(matrix, ~fisher.test(.x))) %>% 
+  mutate(stats = map(fisher, ~broom::glance(.x)))
+# turned each row into a dataframe with 1 observation and 4 variables (column values) 
+# matrix that is a list of 2
+# variable $estimate is odds ratio and $conf.low and $conf.high are what i need
+
+yaay <- analysis %>% 
+  unnest(stats) %>% 
+  select(group, p.value, odds=estimate, conf.low, conf.high)
+
+write_csv(yaay, "everDetected_fisher_SOEUF0.csv")
+```
+
+```{r}
+analysis <- read.csv("everDetected_contingency_LOEUF0.csv", header=FALSE, sep=",") %>% 
+  setNames(c("group", "V1","V2","V3","V4")) %>% 
+  nest(-group) %>% 
+  mutate(matrix=map(data, ~matrix(unlist(.x), nrow=2))) %>% 
+  mutate(fisher = map(matrix, ~fisher.test(.x))) %>% 
+  mutate(stats = map(fisher, ~broom::glance(.x)))
+# turned each row into a dataframe with 1 observation and 4 variables (column values) 
+# matrix that is a list of 2
+# variable $estimate is odds ratio and $conf.low and $conf.high are what i need
+
+yaay <- analysis %>% 
+  unnest(stats) %>% 
+  select(group, p.value, odds=estimate, conf.low, conf.high)
+
+write_csv(yaay, "everDetected_fisher_LOEUF0.csv")
+```
+
+```{r}
+analysis <- read.csv("everDetected_contingency_MOEUF0.csv", header=FALSE, sep=",") %>% 
+  setNames(c("group", "V1","V2","V3","V4")) %>% 
+  nest(-group) %>% 
+  mutate(matrix=map(data, ~matrix(unlist(.x), nrow=2))) %>% 
+  mutate(fisher = map(matrix, ~fisher.test(.x))) %>% 
+  mutate(stats = map(fisher, ~broom::glance(.x)))
+# turned each row into a dataframe with 1 observation and 4 variables (column values) 
+# matrix that is a list of 2
+# variable $estimate is odds ratio and $conf.low and $conf.high are what i need
+
+yaay <- analysis %>% 
+  unnest(stats) %>% 
+  select(group, p.value, odds=estimate, conf.low, conf.high)
+
+write_csv(yaay, "everDetected_fisher_MOEUF0.csv")
+```
+
+
+```{r}
+# gene level plot LOEUF0, MOEUF0, SOEUF0
+boxLabels = c("Cys-Detected", "Lys-Detected", "CK-Detected", "Ever-Detected", "Cys-Detected", "Lys-Detected", "CK-Detected", "Ever-Detected", "Cys-Detected", "Lys-Detected", "CK-Detected", "Ever-Detected")
+
+y2 = length(boxLabels):1
+outname<-"EverDetected_ODDS_gnomadConstraint.pdf"
+df2 <- data.frame(
+  boxOdds = c(3.107,2.178,2.712,2.833,3.208,4.165,4.521,3.511,0.812,0.920,0.821,0.866),
+  boxCILow = c(2.790,1.927,2.371,2.550,2.883,3.722,3.992,3.163,0.710,0.791,0.680,0.767),
+  boxCIHigh = c(3.459,2.459,3.098,3.148,3.569,4.659,5.116,3.898,0.926,1.066,0.984,0.977)
+)
+# --------------------------------------------
+p2 <- ggplot(df2, aes(x = boxOdds, y = y2)) + geom_vline(aes(xintercept = 1), size = .25, linetype = "dashed") +
+  geom_errorbarh(aes(xmax = boxCIHigh, xmin = boxCILow), size = .2, height = 0.5, color = "gray50") +
+  geom_point(size = 2.5 , color = "black", shape=15) +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank()) + scale_y_continuous(breaks = y2, labels = boxLabels) + 
+  scale_x_continuous(limits = c(0, 6.5)) +
+  ylab("") +   xlab("Odds of gnomad gene constraint given\nDetected protein groups vs Undetected proteins")  + 
+  theme(axis.title.x = element_text(size=8, color="black", margin=margin(t=15, b=15)), axis.text=element_text(size=10, color="black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(), axis.line = element_line(colour = "black"))
+p2
+ggsave(outname, width = 6, height=3.5, dpi= 300) 
+```
+
