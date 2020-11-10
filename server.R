@@ -56,22 +56,27 @@ shinyServer(function(input, output, session) {
     missdf = read.csv(paste(getwd(),
                             "data/shiny_detectedOnly_missenseLevel_scores_VEPpopulation_104475.csv", sep="/")),
     clinvar = read.csv(paste(getwd(), 
-                              "data/clinvarcombo_patho&likelyFiltered_det&undet_allScores_389.csv", sep="/"), stringsAsFactors = FALSE),
-    clinvarMean = read.csv(paste(getwd(), 
-                                  "data/clinvarSummary_389patho&likely_overlap_det&undet_scoreMeans.csv", sep="/")),
+                              "data/clinvarcombo_patho&likelyFiltered_det&undet_allScores_389_v2.csv", sep="/"), stringsAsFactors = FALSE),
     comboCKmean = read.csv(paste(getwd(), 
-                                  "data/missenseScoreSummary_det&undet_Means_1327386.csv", sep="/")),
-    enrichdf = read.csv(paste(getwd(),
-                              "data/UKB_HGNCdatamapped_sumCpDAA_3840_TMPOabdropped.csv", sep = "/"))
+                                  "data/summary_Det_clinvar_scoreMeans.csv", sep="/")),
+    annoTable = read.csv(paste(getwd(), "data/annoTable2.csv", sep="/"))
     ) 
-  
-  
-  
   
   # drop down menu to select 1 of 3840 genenames
   HGNCdf <- read.csv(paste(getwd(), "data/HGNCname_sorted_unique_3840_TMPOab_added.csv", sep="/"))
   
+  # annotation table
+  output$AnnoTable <- DT::renderDataTable({
+    df <- dataObs$annoTable
+    df
+  }, escape = FALSE, 
+  options = list(dom = 't', rownames = FALSE, scrollX = TRUE, columnDefs = list(list(targets = "_all")))
+  )
+  
+  
   progress <- reactiveValues(time=shiny::Progress$new(style = "old"))
+  
+  
 
   ## Reactive expression objects
   aadf <- reactive({
@@ -100,7 +105,6 @@ shinyServer(function(input, output, session) {
       ))) %>%
       mutate(matched.aapos = as.integer(matched.aapos))
     return(df)
-
   }) # end aadf()
   
   missdf <-  reactive({
@@ -131,7 +135,6 @@ shinyServer(function(input, output, session) {
         "Target K",
         "panReactive K"
       ))) 
-    
     miss <- miss[
       with(miss, order(matched.UKBID, matched.aapos)),
     ]
@@ -143,11 +146,6 @@ shinyServer(function(input, output, session) {
   updateSelectizeInput(session, "selectGene1",
                        choices = as.vector(HGNCdf$HGNCname), server = TRUE)
   
-  ## select gene name 2 missense level
-  updateSelectizeInput(session, "selectGene2",
-                       choices = as.vector(HGNCdf$HGNCname), server = TRUE)
-  
-  
   ## following submit select protein id  
   proaadf <- eventReactive(input$aasubmit1 , {
     gsym = as.character(trim(input$selectGene1))
@@ -156,347 +154,17 @@ shinyServer(function(input, output, session) {
     return(ukb)
   })
   
-  ## following submit select protein id  
-  popdf <- eventReactive(input$aasubmit2 , {
-    gsym = as.character(trim(input$selectGene2))
-    ukb <- missdf() %>% 
-      filter(HGNCname == gsym)
-    ukb <- droplevels(ukb)
-    return(ukb)
-  })
-  
-  enrichdf <-  reactive({
-    df <- dataObs$enrichdf
-    return(df)
-  })
-
-  ###### enrichr ##################
-  ## following submit gene set
-  detectedDF <- eventReactive(input$queryENR , {
-    df <- enrichdf()
-    geneset = input$selectENRsymbol # as.character(trim(input$selectENRsymbol))
-    if(geneset == "Cys Detected"){
-      df <- df %>% filter(sumCpDC > 0)
-      return(df)
-    }
-    if(geneset == "Lys Detected"){
-      df <- df %>% filter(sumCpDK > 0)
-      return(df)
-    }
-    if(geneset == "All Detected"){
-      return(df)
-    }
-  })
-
-
-  ## DT det and undetect ck mean score summary table
-  output$DEToutput <- DT::renderDataTable({
-    df <- detectedDF() %>% select(-X)
-    df
-  },
-  options = list(scrollX = TRUE, columnDefs = list(list(targets = "_all")), pageLength = 5)
-  )
-  
-  ## Enrichr query based on user input
-  enrichrObj <- eventReactive(input$queryENR , {
-    df <- detectedDF()
-    # drop duplicate symbol rows
-    dfX = df[!duplicated(df[c("HGNC.symbol")]),] 
-    dfX <- dfX$HGNC.symbol
-    progress$time$set(value = 0.5, detail = "processing 50%")
-    dbs<- listEnrichrDbs()
-    dbs <- c("GO_Biological_Process_2018", #1
-             "GO_Cellular_Component_2018", #2
-             "GO_Molecular_Function_2018", #3
-             "KEGG_2019_Human", #4
-             "ChEA_2016", #5
-             "Tissue_Protein_Expression_from_Human_Proteome_Map" #6
-    )
-    enriched <- tryCatch(
-      expr={enrichr(c("Runx1", "Gfi1", "Gfi1b", "Spi1", "Gata1", "Kdr"), dbs)},
-      error = function(e){ 
-        ERRORMSG("Enrichr - Failure during outbound connection!")
-        return(NULL)
-      })
-    if(is.null(enriched)) return(NULL)
-    progress$time$set(value = 0.75, detail = "processing 75%")
-    enriched <- tryCatch(
-      expr={enrichr(dfX, dbs)},
-      error = function(e){ 
-        ERRORMSG("Enrichr - Failure during outbound connection!")
-        return(NULL)
-      })
-    if(is.null(enriched)) return(NULL)
-    progress$time$set(message = "Querying EnrichR", value = 0.75)
-    progress$time$set(value = 1, detail = "processing 100%")
-    return(enriched)
-  })
-  
-  
-  
-  # preview results
-  output$ENRoutput <- DT::renderDataTable({
-    enrichrDF <- enrichrObj()[[as.numeric(input$selectENRresults)]] # default preview GO mf
-    df <- enrichrDF[,c("Term", "Overlap", "P.value", 
-                       "Adjusted.P.value", "Odds.Ratio",
-                       "Combined.Score")] # Genes
-    df['P.value'] <- round(df['P.value'], digits=3)
-    df['Adjusted.P.value'] <- round(df['Adjusted.P.value'], digits=3)
-    df['Odds.Ratio'] <- round(df['Odds.Ratio'], digits=3)
-    df['Combined.Score'] <- round(df['Combined.Score'], digits=3)
-    df
-  },
-  options = list(columnDefs = list(list(className = 'dt-center', targets = c(2,3,4,5,6))), pageLength = 5)
-  )
-  
-  
-  output$downloadDataENR <- renderUI({
-    req(input$queryENR, enrichrObj())
-    downloadButton("enrichrResultDF", label="Download", class="btn-default")
-  })
-  
-  output$enrichrResultDF <- downloadHandler(
-    filename = function() {
-      paste("enrichR_query_", Sys.Date(), ".xlsx", sep="")
-    },
-    content = function(file) {
-      shname = c("GO_Biological_Process_2018", #1
-                 "GO_Cellular_Component_2018", #2
-                 "GO_Molecular_Function_2018", #3
-                 "KEGG_2019_Human", #4
-                 "ChEA_2016", #5
-                 "Tissue_Protein_Expression_from_Human_Proteome_Map" #6
-      )
-      for(i in 1:length(enrichrObj()))
-      {write.xlsx(enrichrObj()[[i]], file, sheetName = shname[i], append=T, row.names=F)}
-    }
-  ) # end downloadhandler
-  
-
-  #--enrichr plots------------------
-  ENRGObp <- reactive({ #update
-    if(is.null(enrichrObj())) return(NULL)
-    i <- 1 # update
-    namesLS <- names(enrichrObj())
-    sortcol <- as.character(trim(input$sortByGObp)) # update
-    res <- enrichrObj()[[i]]
-    # option 1
-    if (sortcol == "Combined.Score") {
-      res.cs <- res[order(res$Combined.Score, decreasing = TRUE), ]
-      res.cs <- res.cs[1:5,]
-      cs <- ggplot(res.cs) + geom_bar(aes(x=Combined.Score, y=reorder(Term, Combined.Score), fill =  Adjusted.P.value), stat = "identity") + scale_x_continuous(expand = c(0,0)) + scale_y_discrete(position="left") + theme(panel.grid.minor = element_blank(),panel.grid.major = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "white")) + ylab("") + xlab("Combined score") + theme(legend.position = "right") +  scale_fill_gradient(low = "red3", high = "lightblue", name = "P.adjust") + ggtitle(namesLS[i]) +
-        theme(plot.title = element_text(hjust = 0.5))
-      return(cs)
-    } # option 2 default
-    else {
-      res.pv <- res[order(res$P.value, decreasing = FALSE), ]
-      res.pv <- res.pv[1:5,]
-      pv <- ggplot(res.pv) + geom_bar(aes(x=P.value, y=reorder(Term, -P.value),
-                                          fill =  Adjusted.P.value), stat = "identity") +
-        scale_x_continuous(trans = "log10",expand = c(0,0)) + scale_y_discrete(position="right") + theme(panel.grid.minor = element_blank(),panel.grid.major = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "white")) + ylab("") + xlab("P-value") +
-        theme(legend.position = "left") + scale_fill_gradient(low = "red3", high = "lightblue", name = "P.adjust") + ggtitle(namesLS[i]) +
-        theme(plot.title = element_text(hjust = 0.5))
-      return(pv)
-    }
-  })
-  
-  output$ENRGObp <- renderPlot({ # update
-    if(is.null(enrichrObj())){
-      return(NULL)
-    }
-    ENRGObp() # update
-  })
-  
-  
-  ENRGOcc <- reactive({ #update
-    if(is.null(enrichrObj())) return(NULL)
-    i <- 2 # update
-    namesLS <- names(enrichrObj())
-    sortcol <- as.character(trim(input$sortByGOcc)) # update
-    res <- enrichrObj()[[i]]
-    # option 1
-    if (sortcol == "Combined.Score") {
-      res.cs <- res[order(res$Combined.Score, decreasing = TRUE), ]
-      res.cs <- res.cs[1:5,]
-      cs <- ggplot(res.cs) + geom_bar(aes(x=Combined.Score, y=reorder(Term, Combined.Score), fill =  Adjusted.P.value), stat = "identity") + scale_x_continuous(expand = c(0,0)) + scale_y_discrete(position="left") + theme(panel.grid.minor = element_blank(),panel.grid.major = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "white")) + ylab("") + xlab("Combined score") + theme(legend.position = "right") +  scale_fill_gradient(low = "red3", high = "lightblue", name = "P.adjust") + ggtitle(namesLS[i]) +
-        theme(plot.title = element_text(hjust = 0.5))
-      return(cs)
-    } # option 2 default
-    else {
-      res.pv <- res[order(res$P.value, decreasing = FALSE), ]
-      res.pv <- res.pv[1:5,]
-      pv <- ggplot(res.pv) + geom_bar(aes(x=P.value, y=reorder(Term, -P.value),
-                                          fill =  Adjusted.P.value), stat = "identity") +
-        scale_x_continuous(trans = "log10",expand = c(0,0)) + scale_y_discrete(position="right") + theme(panel.grid.minor = element_blank(),panel.grid.major = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "white")) + ylab("") + xlab("P-value") +
-        theme(legend.position = "left") + scale_fill_gradient(low = "red3", high = "lightblue", name = "P.adjust") + ggtitle(namesLS[i]) +
-        theme(plot.title = element_text(hjust = 0.5))
-      return(pv)
-    }
-  })
-  
-  output$ENRGOcc <- renderPlot({ # update
-    if(is.null(enrichrObj())){
-      return(NULL)
-    }
-    ENRGOcc() # update
-  })
-  
-  ENRGOmf <- reactive({ #update
-    if(is.null(enrichrObj())) return(NULL)
-    i <- 3 # update
-    namesLS <- names(enrichrObj())
-    sortcol <- as.character(trim(input$sortByGOmf)) # update
-    res <- enrichrObj()[[i]]
-    # option 1
-    if (sortcol == "Combined.Score") {
-      res.cs <- res[order(res$Combined.Score, decreasing = TRUE), ]
-      res.cs <- res.cs[1:5,]
-      cs <- ggplot(res.cs) + geom_bar(aes(x=Combined.Score, y=reorder(Term, Combined.Score), fill =  Adjusted.P.value), stat = "identity") + scale_x_continuous(expand = c(0,0)) + scale_y_discrete(position="left") + theme(panel.grid.minor = element_blank(),panel.grid.major = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "white")) + ylab("") + xlab("Combined score") + theme(legend.position = "right") +  scale_fill_gradient(low = "red3", high = "lightblue", name = "P.adjust") + ggtitle(namesLS[i]) +
-        theme(plot.title = element_text(hjust = 0.5))
-      return(cs)
-    } # option 2 default
-    else {
-      res.pv <- res[order(res$P.value, decreasing = FALSE), ]
-      res.pv <- res.pv[1:5,]
-      pv <- ggplot(res.pv) + geom_bar(aes(x=P.value, y=reorder(Term, -P.value),
-                                          fill =  Adjusted.P.value), stat = "identity") +
-        scale_x_continuous(trans = "log10",expand = c(0,0)) + scale_y_discrete(position="right") + theme(panel.grid.minor = element_blank(),panel.grid.major = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "white")) + ylab("") + xlab("P-value") +
-        theme(legend.position = "left") + scale_fill_gradient(low = "red3", high = "lightblue", name = "P.adjust") + ggtitle(namesLS[i]) +
-        theme(plot.title = element_text(hjust = 0.5))
-      return(pv)
-    }
-  })
-  
-  output$ENRGOmf <- renderPlot({ # update
-    if(is.null(enrichrObj())){
-      return(NULL)
-    }
-    ENRGOmf() # update
-  })
-  
-  
-  ENRkegg <- reactive({ #update
-    if(is.null(enrichrObj())) return(NULL)
-    i <- 4 # update
-    namesLS <- names(enrichrObj())
-    sortcol <- as.character(trim(input$sortByKEGG)) # update
-    res <- enrichrObj()[[i]]
-    # option 1
-    if (sortcol == "Combined.Score") {
-      res.cs <- res[order(res$Combined.Score, decreasing = TRUE), ]
-      res.cs <- res.cs[1:5,]
-      cs <- ggplot(res.cs) + geom_bar(aes(x=Combined.Score, y=reorder(Term, Combined.Score), fill =  Adjusted.P.value), stat = "identity") + scale_x_continuous(expand = c(0,0)) + scale_y_discrete(position="left") + theme(panel.grid.minor = element_blank(),panel.grid.major = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "white")) + ylab("") + xlab("Combined score") + theme(legend.position = "right") +  scale_fill_gradient(low = "red3", high = "lightblue", name = "P.adjust") + ggtitle(namesLS[i]) +
-        theme(plot.title = element_text(hjust = 0.5))
-      return(cs)
-    } # option 2 default
-    else {
-      res.pv <- res[order(res$P.value, decreasing = FALSE), ]
-      res.pv <- res.pv[1:5,]
-      pv <- ggplot(res.pv) + geom_bar(aes(x=P.value, y=reorder(Term, -P.value),
-                                          fill =  Adjusted.P.value), stat = "identity") +
-        scale_x_continuous(trans = "log10",expand = c(0,0)) + scale_y_discrete(position="right") + theme(panel.grid.minor = element_blank(),panel.grid.major = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "white")) + ylab("") + xlab("P-value") +
-        theme(legend.position = "left") + scale_fill_gradient(low = "red3", high = "lightblue", name = "P.adjust") + ggtitle(namesLS[i]) +
-        theme(plot.title = element_text(hjust = 0.5))
-      return(pv)
-    }
-  })
-  
-  output$ENRkegg <- renderPlot({ # update
-    if(is.null(enrichrObj())){
-      return(NULL)
-    }
-    ENRkegg() # update
-  })
-  
-  ENRchea16 <- reactive({
-    if(is.null(enrichrObj())) return(NULL)
-    i <- 5
-    namesLS <- names(enrichrObj())
-    sortcol <- as.character(trim(input$sortByChea))
-    res <- enrichrObj()[[i]]
-    # option 1
-    if (sortcol == "Combined.Score") {
-      res.cs <- res[order(res$Combined.Score, decreasing = TRUE), ]
-      res.cs <- res.cs[1:5,]
-      cs <- ggplot(res.cs) + geom_bar(aes(x=Combined.Score, y=reorder(Term, Combined.Score), fill =  Adjusted.P.value), stat = "identity") + scale_x_continuous(expand = c(0,0)) + scale_y_discrete(position="left") + theme(panel.grid.minor = element_blank(),panel.grid.major = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "white")) + ylab("") + xlab("Combined score") + theme(legend.position = "right") +  scale_fill_gradient(low = "red3", high = "lightblue", name = "P.adjust") + ggtitle(namesLS[i]) +
-        theme(plot.title = element_text(hjust = 0.5))
-      return(cs)
-    } # option 2 default
-    else {
-      res.pv <- res[order(res$P.value, decreasing = FALSE), ]
-      res.pv <- res.pv[1:5,]
-      pv <- ggplot(res.pv) + geom_bar(aes(x=P.value, y=reorder(Term, -P.value),
-                                          fill =  Adjusted.P.value), stat = "identity") +
-        scale_x_continuous(trans = "log10",expand = c(0,0)) + scale_y_discrete(position="right") + theme(panel.grid.minor = element_blank(),panel.grid.major = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "white")) + ylab("") + xlab("P-value") +
-        theme(legend.position = "left") + scale_fill_gradient(low = "red3", high = "lightblue", name = "P.adjust") + ggtitle(namesLS[i]) +
-        theme(plot.title = element_text(hjust = 0.5))
-      return(pv)
-    }
-  })
-  
-  output$ENRchea16 <- renderPlot({
-    if(is.null(enrichrObj())){
-      return(NULL)
-    }
-    ENRchea16()
-  })
-  
-  
-  ENRhpm <- reactive({
-    if(is.null(enrichrObj())) return(NULL)
-    i <- 6 # update
-    namesLS <- names(enrichrObj())
-    sortcol <- as.character(trim(input$sortByHpm)) # update
-    res <- enrichrObj()[[i]]
-    # option 1
-    if (sortcol == "Combined.Score") {
-      res.cs <- res[order(res$Combined.Score, decreasing = TRUE), ]
-      res.cs <- res.cs[1:5,]
-      cs <- ggplot(res.cs) + geom_bar(aes(x=Combined.Score, y=reorder(Term, Combined.Score), fill =  Adjusted.P.value), stat = "identity") + scale_x_continuous(expand = c(0,0)) + scale_y_discrete(position="left") + theme(panel.grid.minor = element_blank(),panel.grid.major = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "white")) + ylab("") + xlab("Combined score") + theme(legend.position = "right") +  scale_fill_gradient(low = "red3", high = "lightblue", name = "P.adjust") + ggtitle(namesLS[i]) +
-        theme(plot.title = element_text(hjust = 0.5))
-      return(cs)
-    } # option 2 default
-    else {
-      res.pv <- res[order(res$P.value, decreasing = FALSE), ]
-      res.pv <- res.pv[1:5,]
-      pv <- ggplot(res.pv) + geom_bar(aes(x=P.value, y=reorder(Term, -P.value),
-                                          fill =  Adjusted.P.value), stat = "identity") +
-        scale_x_continuous(trans = "log10",expand = c(0,0)) + scale_y_discrete(position="right") + theme(panel.grid.minor = element_blank(),panel.grid.major = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "white")) + ylab("") + xlab("P-value") +
-        theme(legend.position = "left") + scale_fill_gradient(low = "red3", high = "lightblue", name = "P.adjust") + ggtitle(namesLS[i]) +
-        theme(plot.title = element_text(hjust = 0.5))
-      return(pv)
-    }
-  })
-  
-  output$ENRhpm <- renderPlot({
-    if(is.null(enrichrObj())){
-      return(NULL)
-    }
-    ENRhpm()
-  })
-  
-  
-  #--------------------
-  ###### LINE PLOTS ##########################
   
   ## DT det and undetect ck mean score summary table
   output$comboCKmean <- DT::renderDataTable({
     df <- dataObs$comboCKmean
     df
   },
-  options = list(scrollX = TRUE, columnDefs = list(list(targets = "_all")), pageLength = 5)
+  options = list(dom = 't', scrollX = TRUE, columnDefs = list(list(targets = "_all")))
   )
+
   
-  ## DT clinvar overlap det and undet ck mean score summary table
-  output$clinvarMean <- DT::renderDataTable({
-    df <- dataObs$clinvarMean
-    df
-  },
-  options = list(scrollX = TRUE, columnDefs = list(list(targets = "_all")), pageLength = 5)
-  )
-  
-  
-  ## DT clinvar missense overlapping det or undet CK mean score summary table
+  ## DT clinvar missense overlapping AA positions
   output$clinvarTable <- DT::renderDataTable({
     clinvar <- dataObs$clinvar
     # sort clinvar df
@@ -504,36 +172,14 @@ shinyServer(function(input, output, session) {
       with(clinvar, order(matched.UKBID, matched.aapos)),
     ]
     clinvar
-  },
+  }, filter="none",
   options = list(scrollX = TRUE, columnDefs = list(list(targets = "_all")), pageLength = 5)
   )
-  
-  
-  
-  
-  
-  
-  
-  
-  # TODO add TITLE with GENE and PROTEIN ID information # HGNCname# matched.UKBID
-  
-  ## DT clinvar overlap 
-  output$clinvarTable <- DT::renderDataTable({
-    clinvar <- dataObs$clinvar
-    # sort clinvar df
-    clinvar <- clinvar[
-      with(clinvar, order(matched.UKBID, matched.aapos)),
-    ]
-    clinvar
-  },
-  options = list(scrollX = TRUE, columnDefs = list(list(targets = "_all")), pageLength = 8)
-  )
-  
   
   
   ## DT table showing UKB ID
   output$aa1Table <- DT::renderDataTable({
-    df <- proaadf() %>% 
+    df <- aadf() %>% # proaadf() %>% 
       select(pos.ID, HGNCname,detected.group,CKpos,
              CADD.raw.hg38.mean,CADD.raw.hg38.max,CADD.raw.hg19.mean,CADD.raw.hg19.max,
              CADD.phred.hg38.mean,CADD.phred.hg38.max,CADD.phred.hg19.mean,CADD.phred.hg19.max,
@@ -541,31 +187,32 @@ shinyServer(function(input, output, session) {
              fathmmMKL.coding.score.mean,fathmmMKL.coding.score.max
       )
     names(df) <- c("AApos ID", "Gene", "Group", "CKpos", "CADDraw38 mean", "CADDraw38 max", 
-                "CADDraw37 mean", "CADDraw37 max", "CADD38 mean", "CADD38 max", "CADD37 mean", "CADD37 max", 
-                "DANN mean", "DANN max", "FATHMM mean", "FATHMM max")
-
+                   "CADDraw37 mean", "CADDraw37 max", "CADD38 mean", "CADD38 max", "CADD37 mean", "CADD37 max", 
+                   "DANN mean", "DANN max", "FATHMM mean", "FATHMM max")
+    
     df
   },
   options = list(scrollX = TRUE, columnDefs = list(list(targets = "_all")), pageLength = 5)
   )
+  
 
-  # # fix me
   # ## DT table MISSENSE LEVEL
   output$aa2Table <- DT::renderDataTable({
-    df <- popdf() %>%
-      select(pos.id19,pos.id38,pos.ID,Amino.acids,rs.dbSNP151,Ensembl.transcriptid,cds.strand,refcodon,codonpos,codon.degeneracy,CADD.phred.hg38,CADD.phred.hg19,CADD.phreddiff.38minus19,CADD.raw.hg38,CADD.raw.hg19,CADD.rawdiff.38minus19,CV.AlleleID,CV.Name,CV.ClinicalSignificance,CV.ClinSigSimple,CV.PhenotypeIDS,CV.PhenotypeList,CV.OriginSimple,CV.Protein.position,COSMIC.ACCESSION.NUMBER,COSMIC.ONC.TSG,COSMIC.CGC.TIER,COSMIC.LEGACY.MUTATION.ID,COSMIC.AA.MUT.START,COSMIC.GENOMIC.MUTATION.ID,DISEASE,MUTATION.SIGNIFICANCE.TIER,overlap.CV.sumIDsPerAA,COS.LEGACY.MUTID.list,AAgroup,reactivity,detected.group,react.threshold,target.label,CKpos,HGNCname,SIFT4G.score,SIFT4G.pred,Polyphen2.HDIV.score,Polyphen2.HDIV.pred,Polyphen2.HVAR.score,Polyphen2.HVAR.pred,LRT.score,LRT.pred,LRT.Omega,MutationTaster.score,MutationTaster.pred,MutationTaster.model,MutationTaster.AAE,MutationAssessor.score,MutationAssessor.pred,PROVEAN.score,PROVEAN.pred,VEST4.score,MetaSVM.score,MetaSVM.pred,MetaLR.score,MetaLR.pred,Reliability.index,M.CAP.score,M.CAP.pred,REVEL.score,MutPred.score,MutPred.protID,MutPred.AAchange,MutPred.Top5features,MPC.score,PrimateAI.score,PrimateAI.pred,DANN.score,fathmm.MKL.coding.score,GC.hg19,CpG.hg19,priPhCons.hg19,mamPhCons.hg19,verPhCons.hg19,priPhyloP.hg19,mamPhyloP.hg19,verPhyloP.hg19,GerpRS.hg19,GerpRSpval.hg19,GerpN.hg19,GerpS.hg19,GC.hg38,CpG.hg38,priPhCons.hg38,mamPhCons.hg38,verPhCons.hg38,priPhyloP.hg38,mamPhyloP.hg38,verPhyloP.hg38,GerpRS.hg38,GerpRSpval.hg38,GerpN.hg38,GerpS.hg38,Gene,Codons,Existing.variation,STRAND,CCDS,ENSP,UNIPARC,RefSeq,GENE.PHENO,DOMAINS,gnomAD.AF,gnomAD.AFR.AF,gnomAD.AMR.AF,gnomAD.ASJ.AF,gnomAD.EAS.AF,gnomAD.FIN.AF,gnomAD.NFE.AF,gnomAD.OTH.AF,gnomAD.SAS.AF,MAX.AF,MAX.AF.POPS,CLIN.SIG,SOMATIC,PHENO,BLOSUM62,detonly.group,variation.size,inClinVar.orCLINSIG
-      )
-    # names(df) <- c("AApos ID", "Gene", "Group", "CKpos", "CADDraw38 mean", "CADDraw38 max",
-    #                "CADDraw37 mean", "CADDraw37 max", "CADD38 mean", "CADD38 max", "CADD37 mean", "CADD37 max",
-    #                "DANN mean", "DANN max", "FATHMM mean", "FATHMM max")
-
+    df <- missdf() %>%
+      select(pos.id19,pos.id38,pos.ID,Amino.acids,rs.dbSNP151,Ensembl.transcriptid,CADD.phred.hg38,CADD.phred.hg19,CADD.phreddiff.38minus19,CADD.raw.hg38,CADD.raw.hg19,CADD.rawdiff.38minus19,CV.AlleleID,CV.Name,CV.ClinicalSignificance,CV.ClinSigSimple,CV.PhenotypeIDS,CV.PhenotypeList,CV.OriginSimple,CV.Protein.position,AAgroup,reactivity,detected.group,react.threshold,target.label,CKpos,HGNCname,M.CAP.score,REVEL.score,MPC.score,PrimateAI.score,
+             DANN.score,fathmm.MKL.coding.score,DOMAINS)
+             # GC.hg19,CpG.hg19,priPhCons.hg19,mamPhCons.hg19,verPhCons.hg19,priPhyloP.hg19,mamPhyloP.hg19,verPhyloP.hg19,GerpRS.hg19,GerpRSpval.hg19,GerpN.hg19,GerpS.hg19,GC.hg38,CpG.hg38,priPhCons.hg38,mamPhCons.hg38,verPhCons.hg38,priPhyloP.hg38,mamPhyloP.hg38,verPhyloP.hg38,GerpRS.hg38,GerpRSpval.hg38,GerpN.hg38,GerpS.hg38
+    
     df
   },
   options = list(scrollX = TRUE, columnDefs = list(list(targets = "_all")), pageLength = 5)
   )
-
-
   
+  
+  
+  
+ 
+  ###### LINE PLOTS ##########################
 
   # [1] CADD single line plot
   makeCaddLines <- function(df, x_var, y1_var, y2_var, y3_var, y4_var, 
