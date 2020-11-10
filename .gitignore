@@ -1,5 +1,6 @@
 HTML_before_CLEANUP/*
 data/*
+app_versions/*
 www/*
 install/*
 scratchPlot.R
