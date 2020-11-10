@@ -38,3 +38,4 @@ HTML_before_CLEANUP/*
 *.pdf
 *.pptx
 *.cif
+.Rproj.user

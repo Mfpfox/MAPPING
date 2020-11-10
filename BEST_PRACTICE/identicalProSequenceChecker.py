@@ -1,26 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# protocol_identicalProSequenceChecker.py
-# demonstration of script at stableID_proSequence_checker.ipynb
+## author: maria f. palafox
+# demonstration of script at identical_proSequence_checker.html
 
-import os
-import sys
+from maplib import *
 import argparse
-import Bio
-from Bio import SeqIO
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
-import pandas as pd
-from ast import literal_eval
-import difflib
-
-# CHANGE PATH
-os.chdir("/Users/mariapalafox/Desktop/MAPPING/BEST_PRACTICE")
-
-
 
 parser = argparse.ArgumentParser()
-
 parser.add_argument("EnsemblFasta", help="This is the Ensembl release-specific fasta filename, example: Homo_sapiens.GRCh38.pep.all.fa")
 
 parser.add_argument("StableIDkey", help="This is the Ensembl-UniProt stable ID cross-reference filename from the same release as the Ensembl fasta file provided, example: Homo_sapiens.GRCh38.94.uniprot.tsv")
@@ -39,199 +25,6 @@ ukbfa = args.UniprotFasta
 UKBdb = args.UniprotDatabase 
 outfileName = release + "CheckedProSeq_ENSPtoUKB.csv"
 
-
-
-def checkColumnValues(df, col):
-    print(df[col].value_counts().reset_index().rename(columns={'index':col, col:'Count'}))
-
-def addColumnLabelDrop(mapList, df, dfcol, newcol):
-    print("mapList set length: ", len(set(mapList)))
-    mendel = []
-    for g in df[dfcol]:
-        if g in mapList:
-            mendel.append("True")
-        else:
-            mendel.append("False")
-    df.loc[:, newcol] = mendel
-    checkColumnValues(df, newcol)
-    print("dropping False rows")
-    df.drop(df[df[newcol] == "False"].index, inplace=True)
-    df.reset_index(inplace=True, drop=True)
-    print("final shape: ", df.shape)
-    return df
-
-def uniqueCount(df, colname):
-    print("total values in column: ", len(df[colname]))
-    print("total unique values: ", len(df[colname].unique()))
-    print()
-
-def ENSPfasta2DF(filename, release):
-    # Pmap_ensembl_fasta.py - parse sequence fasta file
-    identifiers = [seq_record.id for seq_record in SeqIO.parse(filename, "fasta")]
-    descr = [seq_record.description for seq_record in SeqIO.parse(filename, "fasta")]
-    lengths = [len(seq_record.seq) for seq_record in SeqIO.parse(filename, "fasta")]
-    proSeq = [seq_record.seq for seq_record in SeqIO.parse(filename, "fasta")]
-    ensp = []
-    enspv = []
-    proseq = []
-    ensg = []
-    ensgv = []
-    enst = []
-    enstv = []
-    assembly = []
-    chrom = []
-    DNAstart = []
-    DNAstop = []
-    if release == "v85":
-        for id in identifiers:
-            splitID = id.split('.')
-            stable = splitID[0]
-            ensp.append(stable)
-            enspv.append(id)
-        for ps in proSeq:
-            s = str(ps)
-            proseq.append(s)
-        for row in descr:
-            splitrow = row.split(" ")
-            for i,val in enumerate(splitrow):
-                if 'chromosome' in val:
-                    locationSplit = val.split(":")
-                    leng = len(locationSplit)
-                    if leng == 6:
-                        grch = locationSplit[1]
-                        assembly.append(grch)
-                        chrr = locationSplit[2]
-                        chrom.append(chrr)
-                        start = locationSplit[3]
-                        DNAstart.append(start)
-                        stopl = locationSplit[4]
-                        DNAstop.append(stopl)
-                    else:
-                        assembly.append(None)
-                        chrom.append(None)
-                        DNAstart.append(None)
-                        DNAstop.append(None)
-                if 'ENSG' in val:
-                    gene = val.split(":")[1]
-                    stablegene = gene.split(".")[0]
-                    ensgv.append(gene)
-                    ensg.append(stablegene)
-                if 'ENST' in val:
-                    tx = val.split(":")[1]
-                    stabletx = tx.split(".")[0]
-                    enstv.append(tx)
-                    enst.append(stabletx)        
-        nA = pd.Series(assembly, name='Assembly')
-        nC = pd.Series(chrom, name= 'chromosome')
-        nSta = pd.Series(DNAstart, name='start')
-        nSto = pd.Series(DNAstop, name='stop')
-        s2 = pd.Series(enspv, name='ENSPv')
-        s1 = pd.Series(ensp, name= 'ENSP')
-        s7 = pd.Series(lengths, name='ENSPlength', dtype=int)
-        s8 = pd.Series(proseq, name='proSequence')
-        s4 = pd.Series(enstv, name='ENSTv')
-        s3 = pd.Series(enst, name= 'ENST')
-        s6 = pd.Series(ensgv, name='ENSGv')
-        s5 = pd.Series(ensg, name= 'ENSG')
-        series = [s1, s2, s7, s8, s3, s4, s5, s6, nA, nC, nSta, nSto]
-        df = pd.concat(series, axis=1)
-        df.dropna(inplace=True)
-        df.reset_index(drop=True, inplace=True)
-        return(df)
-    # release is not v85
-    else:
-        HGNCsymbol = []
-        HGNCdescription = []
-        for id in identifiers:
-            splitID = id.split('.')
-            stable = splitID[0]
-            ensp.append(stable)
-            enspv.append(id)
-        for ps in proSeq:
-            s = str(ps)
-            proseq.append(s)
-        for row in descr:
-            splitrow = row.split(" ")
-            for i,val in enumerate(splitrow):
-                if 'chromosome' in val:
-                    locationSplit = val.split(":")
-                    leng = len(locationSplit)
-                    if leng == 6:
-                        grch = locationSplit[1]
-                        assembly.append(grch)
-                        chrr = locationSplit[2]
-                        chrom.append(chrr)
-                        start = locationSplit[3]
-                        DNAstart.append(start)
-                        stopl = locationSplit[4]
-                        DNAstop.append(stopl)
-                    else:
-                        assembly.append(None)
-                        chrom.append(None)
-                        DNAstart.append(None)
-                        DNAstop.append(None)
-                if 'ENSG' in val:
-                    gene = val.split(":")[1]
-                    stablegene = gene.split(".")[0]
-                    ensgv.append(gene)
-                    ensg.append(stablegene)
-                if 'ENST' in val:
-                    tx = val.split(":")[1]
-                    stabletx = tx.split(".")[0]
-                    enstv.append(tx)
-                    enst.append(stabletx)
-                if 'gene_symbol' in val: 
-                    sym = val.split(":")[1]
-                    HGNCsymbol.append(sym)
-                if 'description' in val:
-                    # get index of val in row
-                    pos = i
-                    restOfRow = splitrow[pos:]
-                    restOfRow = ' '.join(restOfRow)
-                    HGNCdescription.append(restOfRow)
-        nS = pd.Series(HGNCsymbol, name='HGNCsymbol')
-        nD = pd.Series(HGNCdescription, name='HGNCdescription')
-        nA = pd.Series(assembly, name='Assembly')
-        nC = pd.Series(chrom, name= 'chromosome')
-        nSta = pd.Series(DNAstart, name='start')
-        nSto = pd.Series(DNAstop, name='stop')
-        s2 = pd.Series(enspv, name='ENSPv')
-        s1 = pd.Series(ensp, name= 'ENSP')
-        s7 = pd.Series(lengths, name='ENSPlength', dtype=int)
-        s8 = pd.Series(proseq, name='proSequence')
-        s4 = pd.Series(enstv, name='ENSTv')
-        s3 = pd.Series(enst, name= 'ENST')
-        s6 = pd.Series(ensgv, name='ENSGv')
-        s5 = pd.Series(ensg, name= 'ENSG')
-        series = [s1, s2, s7, s8, s3, s4, s5, s6, nA, nC, nSta, nSto, nS, nD]
-        df = pd.concat(series, axis=1)
-        df.dropna(inplace=True)
-        df.reset_index(drop=True, inplace=True)
-        return(df)
-
-def UKBfasta2DF(filename):
-    identifiers = [seq_record.id for seq_record in SeqIO.parse(filename, "fasta")]
-    lengths = [len(seq_record.seq) for seq_record in SeqIO.parse(filename, "fasta")]
-    proSeq = [seq_record.seq for seq_record in SeqIO.parse(filename, "fasta")]
-    splitAcc = []
-    splitEntry = []
-    proseq = []
-    for id in identifiers:
-        splitID = id.split('|')
-        acc = splitID[1]
-        splitAcc.append(acc)
-        entryName = splitID[2]
-        splitEntry.append(entryName)
-    for ps in proSeq:
-        s = str(ps)
-        proseq.append(s)
-    s1 = pd.Series(splitAcc, name='ID')
-    s2 = pd.Series(splitEntry, name= 'entryName')
-    s3 = pd.Series(lengths, name='UKBlength')
-    s4 = pd.Series(proseq, name='proSequence')
-    series = [s1,s2,s3,s4]
-    df = pd.concat(series, axis=1)
-    return(df)
 
 def identicalSequenceCheck(dfref, dfalt):
     # Pmap_protein_sequence_comparison.py
@@ -260,16 +53,13 @@ def identicalSequenceCheck(dfref, dfalt):
     dfalt.reset_index(inplace=True, drop=True)
     return dfalt
 
-
-
-
 def main():
-    print("Importing Ensembl fasta")
+    print("*** Importing Ensembl fasta ***")
     enspDF = ENSPfasta2DF(ensemblFasta, release)
     print("Shape of Ensembl fasta dataframe: ",enspDF.shape)
 
-    print("Importing UniProt fasta")
-    ukbDF = UKBfasta2DF(ukbfa)
+    print("*** Importing UniProt fasta ***")
+    ukbDF = uniprotkbFasta2csv(ukbfa)
     print("Shape of UniProt fasta dataframe: ",ukbDF.shape)
     listUKB = list(ukbDF['ID'])
 
@@ -281,22 +71,25 @@ def main():
         print("Xref SP and TREMBL UniProt IDs kept")
 
     ## filter ensembl xref file by ukbIDs list
-    print("filtering Ensembl xref file by UniProt fasta stable IDs")
-    xref = addColumnLabelDrop(listUKB, xref, 'xref', 'xrefInUKBfasta')
+    print("*** filtering Ensembl xref file by UniProt fasta stable IDs ***")
+    xref = addcolumnconditionalDrop(listUKB, xref, 'xref', 'xrefInUKBfasta')
 
     ## filter ensembl fasta for ENSP in xref file (filtered by uniprot fasta)
     xref = xref[['protein_stable_id', 'xref']].copy()
     xref.columns = ['ENSP', 'xref']
     listENSP = list(set(xref['ENSP']))
-    print("filtering  Ensembl peptide df by stable ENSP IDs from xref file")
-    enspDF = addColumnLabelDrop(listENSP, enspDF, 'ENSP', 'enspInXref')       
+    print("*** filtering  Ensembl peptide df by stable ENSP IDs from xref "
+          "file ***")
+    enspDF = addcolumnconditionalDrop(listENSP, enspDF, 'ENSP', 'enspInXref')
 
     ## merge xref file (with ENSP & UKB ID) with Ensembl fasta (with ENSP, ENST, ENSG, proSeq...) 
-    print("combining Ensembl xref (ENSP - UKBID cross-ref) with Ensembl fasta DF (contains Ensembl biotype IDs both stable and versioned)")
+    print("*** combining Ensembl xref (ENSP - UKBID cross-ref) with Ensembl "
+          "fasta DF (contains Ensembl biotype IDs both stable and versioned) ")
     mergeENSP = pd.merge(xref, enspDF, on=['ENSP'])
 
     ## check ensembl pro sequence identity against canonical ukb seq from fasta
-    print("identify ensembl protein sequences identical to UniProt reference")
+    print("*** identify ensembl protein sequences identical to UniProt "
+          "reference ***")
     finaldf = identicalSequenceCheck(ukbDF, mergeENSP)
 
     # change colnames 

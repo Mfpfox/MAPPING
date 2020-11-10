@@ -1,7 +1,6 @@
 # !/usr/bin/env python3
 # -*- coding: utf-8 -*-
-#  functions referenced in README for .... 
-# link to github page: ....
+## author: maria f. palafox
 
 import os
 import sys
@@ -14,6 +13,8 @@ import difflib
 from statistics import mean
 import jellyfish
 import textdistance
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
 
 # [1]
@@ -24,6 +25,34 @@ def UKBposID(df, IDcol, AAposCol):
     return(df)
 
 # [2]
+def avg_reactivity(df):
+    # turning series into list
+    listCreact = list(df.reactivity)
+    # turning list into list of lists
+    llcreact = [x.split() for x in listCreact]
+    # removed last index of sublist which contained the / value
+    for sublist in llcreact:
+        del sublist[-1]
+    # getting average of lists in list
+    avgg = []
+    for sublist in llcreact:
+        test_list = [float(i) for i in sublist]
+        s = sum(test_list)
+        l = len(sublist)
+        a = s/l
+        avgg.append(a)
+    # formating decimal place
+    avgf = ["{0:.2f}".format(x) for x in avgg]
+    print("shape of df: ", df.shape)
+    print("shape of averaged column: ", len(avgf))
+    # convert this into a column for CreactTRUE df
+    avgR = pd.DataFrame(np.array(avgf).reshape(-1, 1))
+    avgR.columns = ['avgReactivity']
+    df2 = pd.concat([df, avgR], axis=1)
+    df3 = df2[['pos_ID', 'avgReactivity']].copy()
+    return df3
+
+# [3]
 def add_thresholds(df):
     # adding reactivity threshold labels, assumes colname 'reactivity'
     # High no lower bound ... r <= 2
@@ -36,27 +65,261 @@ def add_thresholds(df):
     df.loc[df.reactivity > 5, 'Threshold'] = 'Low'
     return df
 
-# [3]
+# [4]
 def checkColumnValues(df, col):
     print(df[col].value_counts().reset_index().rename(columns={'index':col, col:'Count'}))
 
 
-# from Pmap_chemoproteomic_2012.py
+# [5]
+def uniprotkbFasta2csv(filename):
+    identifiers = [seq_record.id for seq_record in SeqIO.parse(filename, "fasta")]
+    lengths = [len(seq_record.seq) for seq_record in SeqIO.parse(filename, "fasta")]
+    proSeq = [seq_record.seq for seq_record in SeqIO.parse(filename, "fasta")]
+    # splitting identifiers into 2 seperate list
+    splitAcc = []
+    splitEntry = []
+    proseq = []
+    for id in identifiers:
+        splitID = id.split('|')
+        acc = splitID[1]
+        splitAcc.append(acc)
+        entryName = splitID[2]
+        splitEntry.append(entryName)
+    for ps in proSeq:
+        s = str(ps)
+        proseq.append(s)
+    s1 = pd.Series(splitAcc, name='ID')
+    s2 = pd.Series(splitEntry, name= 'entryName')
+    s3 = pd.Series(lengths, name='Length')
+    s4 = pd.Series(proseq, name='proSequence')
+    series = [s1,s2,s3,s4]
+    df = pd.concat(series, axis=1)
+    return(df)
+
+# [6]
+def make_aapos_key(df, aa):
+    # assumes colnames of 'proSequence' and 'ID' to make
+    # residue-level key id
+    annotation = []
+    for index, row in df.iterrows():
+        raw_seq = str(row['proSequence'])
+        entry = str(row["ID"])
+        for i, j in enumerate(raw_seq):
+            if j == aa:
+                pos = str(i+1) #1 index correction
+                annotation.append(entry + '_' + aa + pos)
+    final = pd.DataFrame(annotation)
+    final.columns = ['pos_ID']
+    print("Number of", aa, " amino acids in fasta", final.shape)
+    return(final)
+
+# [7]
+def addcolumnconditional(mapList, df, dfcol, newcol):
+    ls = []
+    for g in df[dfcol]:
+        if g in mapList:
+            ls.append("True")
+        else:
+            ls.append("False")
+    df.loc[:, newcol] = ls
+    print("results of addColumnConditional: ")
+    checkColumnValues(df, newcol)
+    print()
+    return df
+
+# [8]
+def addcolumnconditionalDrop(mapList, df, dfcol, newcol):
+    ls = []
+    for g in df[dfcol]:
+        if g in mapList:
+            ls.append("True")
+        else:
+            ls.append("False")
+    df.loc[:, newcol] = ls
+    print("pre drop df shape: ", df.shape)
+    df = df[df[newcol] == "True"].copy()
+    df.drop(newcol, axis=1, inplace=True)
+    df.reset_index(inplace=True, drop=True)
+    print("post drop df shape: ", df.shape)
+    return df
+
+
+# [10]
+def makeCHRfiles(df, savename):
+    # accepts df w/ uniprot IDs and col for 'chr'
+    # savename is extenstion for chr chunk files, e.g. chr1'_savename.csv'
+    chrlist = ['chr1','chr2','chr3','chr4','chr5','chr6','chr7',
+    'chr8','chr9','chr10','chr11','chr12','chr13','chr14','chr15',
+    'chr16','chr17','chr18','chr19','chr20','chr21','chr22','chrX',
+    'chrY']
+    for i in chrlist:
+        ch = str(i)
+        dff = df[df['chr'] == ch].copy()
+        dff.drop(['chr'], inplace=True, axis=1) # drop col with chr
+        print(i, dff.shape)
+        dff.to_csv(ch+savename,index=False)
+
+# [11]
 def split_ID(df1, col):
     new1 = df1[col].str.split("_", n=1, expand = True)
     df1["ID"] = new1[0]
     return df1
 
-def count_unique_IDs(df, col):
-    idset = set(df[col])
-    print("unique IDs in df: ", len(idset))
-    return idset
+# [12]
+def uniqueCount(df, colname):
+    print("total values in column: ", len(df[colname]))
+    print("total unique values: ", len(df[colname].unique()))
+    print()
 
+# [13]
+def ENSPfasta2DF(filename, release):
+    # Pmap_ensembl_fasta.py - parse sequence fasta file
+    identifiers = [seq_record.id for seq_record in
+                   SeqIO.parse(filename, "fasta")]
+    descr = [seq_record.description for seq_record in
+             SeqIO.parse(filename, "fasta")]
+    lengths = [len(seq_record.seq) for seq_record in
+               SeqIO.parse(filename, "fasta")]
+    proSeq = [seq_record.seq for seq_record in SeqIO.parse(filename, "fasta")]
+    ensp = []
+    enspv = []
+    proseq = []
+    ensg = []
+    ensgv = []
+    enst = []
+    enstv = []
+    assembly = []
+    chrom = []
+    DNAstart = []
+    DNAstop = []
+    if release == "v85":
+        for id in identifiers:
+            splitID = id.split('.')
+            stable = splitID[0]
+            ensp.append(stable)
+            enspv.append(id)
+        for ps in proSeq:
+            s = str(ps)
+            proseq.append(s)
+        for row in descr:
+            splitrow = row.split(" ")
+            for i, val in enumerate(splitrow):
+                if 'chromosome' in val:
+                    locationSplit = val.split(":")
+                    leng = len(locationSplit)
+                    if leng == 6:
+                        grch = locationSplit[1]
+                        assembly.append(grch)
+                        chrr = locationSplit[2]
+                        chrom.append(chrr)
+                        start = locationSplit[3]
+                        DNAstart.append(start)
+                        stopl = locationSplit[4]
+                        DNAstop.append(stopl)
+                    else:
+                        assembly.append(None)
+                        chrom.append(None)
+                        DNAstart.append(None)
+                        DNAstop.append(None)
+                if 'ENSG' in val:
+                    gene = val.split(":")[1]
+                    stablegene = gene.split(".")[0]
+                    ensgv.append(gene)
+                    ensg.append(stablegene)
+                if 'ENST' in val:
+                    tx = val.split(":")[1]
+                    stabletx = tx.split(".")[0]
+                    enstv.append(tx)
+                    enst.append(stabletx)
+        nA = pd.Series(assembly, name='Assembly')
+        nC = pd.Series(chrom, name='chromosome')
+        nSta = pd.Series(DNAstart, name='start')
+        nSto = pd.Series(DNAstop, name='stop')
+        s2 = pd.Series(enspv, name='ENSPv')
+        s1 = pd.Series(ensp, name='ENSP')
+        s7 = pd.Series(lengths, name='ENSPlength', dtype=int)
+        s8 = pd.Series(proseq, name='proSequence')
+        s4 = pd.Series(enstv, name='ENSTv')
+        s3 = pd.Series(enst, name='ENST')
+        s6 = pd.Series(ensgv, name='ENSGv')
+        s5 = pd.Series(ensg, name='ENSG')
+        series = [s1, s2, s7, s8, s3, s4, s5, s6, nA, nC, nSta, nSto]
+        df = pd.concat(series, axis=1)
+        df.dropna(inplace=True)
+        df.reset_index(drop=True, inplace=True)
+        return (df)
+    # release is not v85
+    else:
+        HGNCsymbol = []
+        HGNCdescription = []
+        for id in identifiers:
+            splitID = id.split('.')
+            stable = splitID[0]
+            ensp.append(stable)
+            enspv.append(id)
+        for ps in proSeq:
+            s = str(ps)
+            proseq.append(s)
+        for row in descr:
+            splitrow = row.split(" ")
+            for i, val in enumerate(splitrow):
+                if 'chromosome' in val:
+                    locationSplit = val.split(":")
+                    leng = len(locationSplit)
+                    if leng == 6:
+                        grch = locationSplit[1]
+                        assembly.append(grch)
+                        chrr = locationSplit[2]
+                        chrom.append(chrr)
+                        start = locationSplit[3]
+                        DNAstart.append(start)
+                        stopl = locationSplit[4]
+                        DNAstop.append(stopl)
+                    else:
+                        assembly.append(None)
+                        chrom.append(None)
+                        DNAstart.append(None)
+                        DNAstop.append(None)
+                if 'ENSG' in val:
+                    gene = val.split(":")[1]
+                    stablegene = gene.split(".")[0]
+                    ensgv.append(gene)
+                    ensg.append(stablegene)
+                if 'ENST' in val:
+                    tx = val.split(":")[1]
+                    stabletx = tx.split(".")[0]
+                    enstv.append(tx)
+                    enst.append(stabletx)
+                if 'gene_symbol' in val:
+                    sym = val.split(":")[1]
+                    HGNCsymbol.append(sym)
+                if 'description' in val:
+                    # get index of val in row
+                    pos = i
+                    restOfRow = splitrow[pos:]
+                    restOfRow = ' '.join(restOfRow)
+                    HGNCdescription.append(restOfRow)
+        nS = pd.Series(HGNCsymbol, name='HGNCsymbol')
+        nD = pd.Series(HGNCdescription, name='HGNCdescription')
+        nA = pd.Series(assembly, name='Assembly')
+        nC = pd.Series(chrom, name='chromosome')
+        nSta = pd.Series(DNAstart, name='start')
+        nSto = pd.Series(DNAstop, name='stop')
+        s2 = pd.Series(enspv, name='ENSPv')
+        s1 = pd.Series(ensp, name='ENSP')
+        s7 = pd.Series(lengths, name='ENSPlength', dtype=int)
+        s8 = pd.Series(proseq, name='proSequence')
+        s4 = pd.Series(enstv, name='ENSTv')
+        s3 = pd.Series(enst, name='ENST')
+        s6 = pd.Series(ensgv, name='ENSGv')
+        s5 = pd.Series(ensg, name='ENSG')
+        series = [s1, s2, s7, s8, s3, s4, s5, s6, nA, nC, nSta, nSto, nS, nD]
+        df = pd.concat(series, axis=1)
+        df.dropna(inplace=True)
+        df.reset_index(drop=True, inplace=True)
+        return (df)
 
-
-
-
-
+# [14]
 def create_coordinate_id(df, chrr, pos, ref, alt):
     # variables are colnames of df
     df.loc[:,'pos_coordinate'] = df[chrr].astype(str) + '_' + \
@@ -64,43 +327,43 @@ def create_coordinate_id(df, chrr, pos, ref, alt):
     '_' + df[alt].astype(str)
     return df
 
+# [15]
 def header_index(df):
     header = df.columns
     d = {header[i] : i for i in range(0, len(header))}
     print(d)
 
+# [16]
 def stableID_key(df):
     df['stableID_key'] = df['gene_stable_id'].astype(str) + \
 '_' + df['transcript_stable_id'].astype(str) + \
 '_' + df['protein_stable_id'].astype(str)
 
+# [17]
 def replace_col_value(df, colname, val_og, val_new):
     # replace col values 
     df[colname].replace(val_og, val_new, inplace=True)
     return df
 
+# [18]
 def drop_duplicates(df, col):
     df.drop_duplicates(subset = col, keep = 'first', inplace = True) 
     return df
 
+# [19]
 def change_col_type(df, col):
     # changing column types in pandas
     df[col] = pd.to_numeric(df[col])
     dffinal = df.sort_values(by=[col])
     return dffinal
 
-def add_thresholds(df):
-    # adding new threshold by old numbers from nature paper
-    df.loc[df.reactivity <= 2, 'Threshold'] = 'High' 
-    df.loc[(df.reactivity > 2) & (df.reactivity <= 5), 'Threshold'] = 'Medium' 
-    df.loc[df.reactivity > 5, 'Threshold'] = 'Low'
-    return df
-
+# [20]
 def subtract_cols(df, col1, col2, newcol):
     # new column from subtracting other 2
     df = df.assign(newcol = df[col1] - df[col2])
     return df
 
+# [21]
 def map_column_values(refdf, df, dickey, dicvalue):
     # adds gene symbol col
     # make sure refdf has dickey and dicvalue column
@@ -111,6 +374,7 @@ def map_column_values(refdf, df, dickey, dicvalue):
     df[dicvalue] = df[dicvalue].map(refdic)
     return df
 
+# [22]
 def format_missense_triple(df, oaacol, naacol):
     #  A|A turns to Ala/Ala
     amino_dict = dict([('A', 'Ala'),('G', 'Gly'), ('I','Ile'), ('L','Leu'), ('P', 'Pro'), ('V','Val'), ('F','Phe'),('W', 'Trp'), ('Y', 'Tyr'), ('D','Asp'),('E','Glu'), ('R','Arg'),('H','His'), ('K','Lys'), ('S','Ser'), ('T', 'Thr'), ('C', 'Cys'), ('M', 'Met'), ('N', 'Asn'), ('Q','Gln')])
@@ -120,42 +384,51 @@ def format_missense_triple(df, oaacol, naacol):
     df['Amino_acids'] = df[oaacol].str.cat(ccopy, sep='/')
     return df
 
+# [23]
 def setme(s):
     ls = list(s)
     finalset = set(ls)
     return finalset
 
+# [24]
 def avgme(s):
     return mean(s)
 
+# [25]
 def rangefinder(s):
     maxx = max(s)
     minn = min(s)
     diff = maxx - minn
     return diff
 
+# [26]
 def sortbycols(df, colnamelist):
     # sorting df based on 2 columns, colname in list
     df.sort_values(by=colnamelist, inplace=True)
     df.reset_index(inplace=True, drop=True)
 
+# [27]
 def sortbycol(df, colname):
     # sorting df based on 1 col
     df.sort_values(by=[colname], inplace=True)
     df.reset_index(inplace=True, drop=True)
 
-def countChar(ls):
-    # using count() to get C and K #
-    Cys = 0
-    Lys = 0
-    for st in COUNTck:
-        C = st.count('C')
-        K = st.count('K')
-        Cys += C
-        Lys += K
-    print(Cys)
-    print(Lys)
+# 
+def addMaxMean(df, scorecol):
+    maxscore = scorecol + "_max"
+    meanscore = scorecol + "_mean"
+    # grouping on pos_ID
+    df[scorecol] = df[scorecol].astype(float)
+    df = df.groupby('pos_ID',sort=False)[scorecol].apply(list)
+    # convert back to pd dataframe
+    df = pd.DataFrame(df)
+    df[meanscore] = df[scorecol].apply(lambda x: mean(x))
+    df[maxscore] = df[scorecol].apply(lambda x: max(x))
+    df.reset_index(inplace=True)
+    df.drop(scorecol, axis=1, inplace=True)
+    return df
 
+# [28]
 def dropNotLabeled(df, Lever):
     # drops rows where ID does not match list IDs 'Lever'
     df['SharedUKB_IDs'] = np.where(df['xref'].isin(Lever), "True", "False")
@@ -166,8 +439,7 @@ def dropNotLabeled(df, Lever):
     print("shape final cleaned df: ", df2.shape)
     return df2
 
-########### more complex functions ##################
-
+# [29]
 def feature_id_col(filename, outfile, subset):
     # from M19_12_27 markdown
     if subset == 'dect':
@@ -223,79 +495,7 @@ def feature_id_col(filename, outfile, subset):
                         csvWriter.writerow(row)
         print("done with : ", outfile)
 
-def avg_reactivity(df):
-    # turning series into list
-    listCreact = list(df.reactivity)
-    # turning list into list of lists
-    llcreact = [x.split() for x in listCreact]
-    # removed last index of sublist which contained the / value
-    for sublist in llcreact:
-        del sublist[-1]
-    # getting average of lists in list
-    avgg = []
-    for sublist in llcreact:
-        test_list = [float(i) for i in sublist]
-        s = sum(test_list)
-        l = len(sublist)
-        a = s/l
-        avgg.append(a)
-    # formating decimal place
-    avgf = ["{0:.2f}".format(x) for x in avgg]
-    print("shape of df: ", df.shape)
-    print("shape of averaged column: ", len(avgf))
-    # convert this into a column for CreactTRUE df
-    avgR = pd.DataFrame(np.array(avgf).reshape(-1, 1))
-    avgR.columns = ['avgReactivity']
-    df2 = pd.concat([df, avgR], axis=1)
-    df3 = df2[['pos_ID', 'avgReactivity']].copy()
-    return df3
-
-def mismaplines_dynamic(df):
-# expanding this out to include dynamic levels - 1 2 3 
-    diffline = []
-    for index, row in df.iterrows():
-        ukbid = row['ID']
-        ls = row['frac_missed']
-        #python_ls = literal_eval(ls) 
-        python_ls = ls
-        lenLS = len(set(python_ls))
-        if lenLS == 5:
-            diffline.append("5")
-        if lenLS == 4:
-            diffline.append("4")
-        if lenLS == 3:
-            diffline.append("3")
-        if lenLS == 2:
-            diffline.append("2")
-        if lenLS == 1:
-            diffline.append("1")
-    df.loc[:,'dynamic_slope_scores'] = diffline
-    print(df.shape)
-
-
-### protein seq comparison ###
-
-def sequenceDifference(dfref, dfalt):
-    # assumes ID and proSequence column
-    ref_dic = dict(zip(dfref.ID, dfref.proSequence))
-    diffcol = []
-    for index, row in dfalt.iterrows():
-        pep = row['proSequence']
-        ukb_id = row['ID']
-        # retrieve uniprot fasta seq using reference dictionary
-        mypep = ref_dic[ukb_id]
-        str(mypep)
-        if mypep == pep:
-            diffcol.append('nodiff')
-        if mypep != pep:
-            output_list = [li for li in difflib.ndiff(mypep, pep) if li[0] != ' ']
-            out = ', '.join(output_list)
-            diffcol.append(out)
-    # add identity score list as new column
-    dfalt.loc[:, 'difference_12vs18'] = diffcol
-    print(dfalt.shape)
-    return dfalt
-
+# [30]
 def get_pos_dictionary(pdcol):
     # creates list of Cys and Lys position keys
     list_of_dicts = []
@@ -313,64 +513,7 @@ def get_pos_dictionary(pdcol):
         list_of_dicts.append(sdi)
     return list_of_dicts
 
-def identicalSequenceCheck(dfref, dfalt):
-    # used for ukb to ukb 2018 2012 seq comparison dfref is 2018
-    # assumes ID and proSequence column
-    # compares the sequence in df and dict value, adds column based on comparison results
-    # True is they are identical, False is they are different
-    ref_dic = dict(zip(dfref.ID, dfref.proSequence))
-    ref_len = dict(zip(dfref.ID, dfref.Length))
-    newcol = []
-    len2012 = []
-    for index, row in dfalt.iterrows():
-        pep = row['proSequence']
-        ukb_id = row['ID']
-        # retrieve uniprot fasta seq using reference dictionary
-        mypep = ref_dic[ukb_id]
-        len12 = ref_len[ukb_id]
-        str(mypep)
-        if mypep == pep:
-            newcol.append('True')
-            len2012.append(len12)
-        if mypep != pep: 
-            newcol.append('False')
-            len2012.append(len12)
-    # add identity score list as new column
-    dfalt.loc[:, 'identical_seq'] = newcol
-    dfalt.loc[:, 'length_2012_fasta'] = len2012
-    dfalt.loc[:, 'len12_minus_len18'] = dfalt['length_2012_fasta'] - dfalt['Length']
-    print(dfalt.shape)
-    checkColumnValues(dfalt, "identical_seq")
-    return dfalt
-
-def identicalSequences(dfEnsp, ref_dic, newcol):
-    # for comparison of ukb seq to ensp  seq
-    # input df with proSequence col, a dict with ID and prosequence values
-    # outputs a dataframe with new column based on match or not
-    # outputs list of IDs that have different protein sequences
-    # outputs counts of True False in new col
-    res = []
-    for index, row in dfEnsp.iterrows():
-        pep = row['proSequence']
-        idd = row['ENSP']
-        # check pep to dict pep sequence
-        mypep = ref_dic[idd]
-        str(mypep)
-        if mypep == pep:
-            res.append('True')
-        if mypep != pep:
-            res.append('False')
-    # add new column
-    dfEnsp.loc[:, newcol] = res
-    # pull out rows with different peptides same ENSP save as list
-    dfFALSE = dfEnsp[dfEnsp[newcol] == 'False']
-    dfFALSE_list = dfFALSE['ENSP'].tolist()
-    # count # of same and different peptide for same ENSP
-    checkColumnValues(dfEnsp, newcol)
-    # print IDs that have different pep
-    print(dfFALSE_list)
-    return dfEnsp
-
+# [31]
 def sequenceDistance(dfEnsp, ref_dic, newcolresult, hamming, hammingNorm, levenshtein, levenshteinNorm):
     res = []
     ham = []
