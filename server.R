@@ -45,43 +45,81 @@ shinyServer(function(input, output, session) {
 
 # START observing data  ####
 #######################################
-  ## aalevel1 file
-  ## aalevel2 file
-  ## clinvar missense-level det/undet overlap file
-  ## clinvar summary file for AA level groups
-  ## missense level all possible score summary for AA level groups
+  #missdf
+
+  progress <- reactiveValues(time=shiny::Progress$new(style = "old"))
+
+  # annotation sources table
+  annoTable <- read.csv(paste(getwd(), "data/annoTable2.csv", sep="/"))
+
+  # missense level df for CpDAA overlapping pathogenic/likely pathogenic ClinVar missense var
+  clinvar <- read.csv(paste(getwd(), 
+                            "data/clinvar_CpDAAoverlap_GRCh37_64missense.csv", sep="/"), stringsAsFactors = FALSE)
+
+  # unique counts summary table
+  countTable <- read.csv(paste(getwd(), 
+                                "data/summary_Det_clinvar_accounting.csv", sep="/"))
+
+  # all aa level annotations for CpDAA and undetected equivalent AA
+  aadf <- read.csv(paste(getwd(),
+                        "data/AAlevel_CpDAA_undetected_4526UKBID.csv",sep="/")) 
+  
   dataObs <- reactiveValues(
     aadf = read.csv(paste(getwd(),
-                          "data/AAlevel6cvIDfix_gnomadScores_detectedCount_189627.csv",sep="/")),
-    missdf = read.csv(paste(getwd(),
-                            "data/shiny_detectedOnly_missenseLevel_scores_VEPpopulation_104475.csv", sep="/")),
-    clinvar = read.csv(paste(getwd(), 
-                              "data/clinvarcombo_patho&likelyFiltered_det&undet_allScores_389_v2.csv", sep="/"), stringsAsFactors = FALSE),
-    comboCKmean = read.csv(paste(getwd(), 
-                                  "data/summary_Det_clinvar_scoreMeans.csv", sep="/")),
-    annoTable = read.csv(paste(getwd(), "data/annoTable2.csv", sep="/"))
-    ) 
+                          "data/AAlevel_CpDAA_undetected_4526UKBID.csv",sep="/"))
+  )
+
+  # protein level df
+  xref <- read.csv(paste(getwd(),
+                        "data/proteinLevel_xref_4526IDs.csv",sep="/")) %>% 
+    select(matched.UKBID, CpDK.count, CpDC.count, 
+           everCpDAA.count,Gene.UKB, Protein.UKB, 
+           OMIM, gene.UKBID, Canonical.pro.isoform, CCDS, 
+           RefSeq, GO.biologicalProcess,GO.cellularComponent, 
+           GO.moleculeFunction, PDB.xref.UKB,
+           ENST.85,ENSP.85,
+           pLI, oe_lof_upper)
+
+  # drop down menu to select 1 of 4526 genename ukbID (TMPO redundancy)
+  HGNCdf <- read.csv(paste(getwd(), 
+    "data/geneName_sort_4526.csv", sep="/"))
   
-  # drop down menu to select 1 of 3840 genenames
-  HGNCdf <- read.csv(paste(getwd(), "data/HGNCname_sorted_unique_3840_TMPOab_added.csv", sep="/"))
-  
+
   # annotation table
   output$AnnoTable <- DT::renderDataTable({
-    df <- dataObs$annoTable
-    df
+    annoTable
   }, escape = FALSE, 
   options = list(dom = 't', rownames = FALSE, scrollX = TRUE, columnDefs = list(list(targets = "_all")))
   )
+
+  ## unique CpDAA counts table
+  output$countTable <- DT::renderDataTable({
+    countTable
+  },
+  options = list(dom = 't', scrollX = TRUE, columnDefs = list(list(targets = "_all")))
+  )
+
+  ## protein level table
+  output$proTable <- DT::renderDataTable(
+    DT::datatable(xref, escape=FALSE, 
+                  options = list(
+                    pageLength = 5, autoWidth = TRUE,
+                    columnDefs = list(list(targets = c(6,10,11,12), 
+                                           width = '600px')), scrollX = TRUE
+                  )))
   
   
-  progress <- reactiveValues(time=shiny::Progress$new(style = "old"))
-  
-  
+  ## DT clinvar missense overlapping AA positions
+  output$clinvarTable <- DT::renderDataTable({
+    clinvar
+  }, filter="none",
+  options = list(scrollX = TRUE, columnDefs = list(list(targets = "_all")), pageLength = 5)
+  )
+
 
   ## Reactive expression objects
   aadf <- reactive({
-    df <- dataObs$aadf
-    df <- df %>%
+    df <- dataObs$aadf %>% 
       mutate(AAgroup = factor(AAgroup, levels = c(
         "Detected C",
         "Undetected C",
@@ -92,125 +130,59 @@ shinyServer(function(input, output, session) {
         "C",
         "K"
       ))) %>%
-      mutate(group = factor(group, levels = c(
+      mutate(detected = factor(detected, levels = c(
         "Detected",
-        "Undetected"
-      ))) %>%
-      mutate(detected.group = factor(detected.group, levels = c(
-        "High","High Target","High panReactive",
-        "Medium","Medium Target","Medium panReactive",
-        "Low","Low Target","Low panReactive",
-        "Target","panReactive",
         "Undetected"
       ))) %>%
       mutate(matched.aapos = as.integer(matched.aapos))
     return(df)
   }) # end aadf()
   
-  missdf <-  reactive({
-    miss <- dataObs$missdf
-    miss <- miss %>%
-      mutate(matched.aapos = as.integer(matched.aapos)) %>% 
-      mutate(detonly.group = factor(detonly.group, levels = c(
-        "High C",
-        "High Target C",
-        "High panReactive C",
-        "Medium C",
-        "Medium Target C",
-        "Medium panReactive C",
-        "Low C",
-        "Low Target C",
-        "Low panReactive C",
-        "Target C",
-        "panReactive C",
-        "High K",
-        "High Target K",
-        "High panReactive K",
-        "Medium K",
-        "Medium Target K",
-        "Medium panReactive K",
-        "Low K",
-        "Low Target K",
-        "Low panReactive K",
-        "Target K",
-        "panReactive K"
-      ))) 
-    miss <- miss[
-      with(miss, order(matched.UKBID, matched.aapos)),
-    ]
-    return(miss)
-  }) # end missdf()
+  ## DT table aadf
+  output$aa1Table <- DT::renderDataTable({
+    df <- aadf() %>% 
+      filter(detected == "Detected")
+    df
+  },
+  options = list(scrollX = TRUE, columnDefs = list(list(targets = "_all")),
+                 pageLength = 5, rownames= FALSE)
+  )
 
-  
   ## select gene name 1 aa level
   updateSelectizeInput(session, "selectGene1",
                        choices = as.vector(HGNCdf$HGNCname), server = TRUE)
   
   ## following submit select protein id  
+  proteinInfo <- eventReactive(input$aasubmit1 , {
+    gsym = as.character(trim(input$selectGene1))
+    ukb <- xref %>% 
+      filter(gene.UKBID == gsym) # updated colname for gene + UKBID
+    return(ukb)
+  })
+
+  ## DT table showing UKB ID
+  output$proteinInfo <- DT::renderDataTable({
+    df <- data.frame(t(proteinInfo()))
+    names(df) <- "CpDAA Protein Summary"
+    df
+  },
+  options = list(scrollX = TRUE, columnDefs = list(list(targets = "_all")))
+  )
+
   proaadf <- eventReactive(input$aasubmit1 , {
     gsym = as.character(trim(input$selectGene1))
     ukb <- aadf() %>% 
-      filter(HGNCname == gsym)
+      filter(gene.UKBID == gsym) # updated colname for gene + UKBID
     return(ukb)
   })
   
-  
-  ## DT det and undetect ck mean score summary table
-  output$comboCKmean <- DT::renderDataTable({
-    df <- dataObs$comboCKmean
-    df
-  },
-  options = list(dom = 't', scrollX = TRUE, columnDefs = list(list(targets = "_all")))
-  )
-
-  
-  ## DT clinvar missense overlapping AA positions
-  output$clinvarTable <- DT::renderDataTable({
-    clinvar <- dataObs$clinvar
-    # sort clinvar df
-    clinvar <- clinvar[
-      with(clinvar, order(matched.UKBID, matched.aapos)),
-    ]
-    clinvar
-  }, filter="none",
-  options = list(scrollX = TRUE, columnDefs = list(list(targets = "_all")), pageLength = 5)
-  )
-  
-  
-  ## DT table showing UKB ID
-  output$aa1Table <- DT::renderDataTable({
-    df <- aadf() %>% # proaadf() %>% 
-      select(pos.ID, HGNCname,detected.group,CKpos,
-             CADD.raw.hg38.mean,CADD.raw.hg38.max,CADD.raw.hg19.mean,CADD.raw.hg19.max,
-             CADD.phred.hg38.mean,CADD.phred.hg38.max,CADD.phred.hg19.mean,CADD.phred.hg19.max,
-             DANN.score.mean,DANN.score.max,
-             fathmmMKL.coding.score.mean,fathmmMKL.coding.score.max
-      )
-    names(df) <- c("AApos ID", "Gene", "Group", "CKpos", "CADDraw38 mean", "CADDraw38 max", 
-                   "CADDraw37 mean", "CADDraw37 max", "CADD38 mean", "CADD38 max", "CADD37 mean", "CADD37 max", 
-                   "DANN mean", "DANN max", "FATHMM mean", "FATHMM max")
-    
-    df
-  },
-  options = list(scrollX = TRUE, columnDefs = list(list(targets = "_all")), pageLength = 5)
-  )
-  
-
-  # ## DT table MISSENSE LEVEL
   output$aa2Table <- DT::renderDataTable({
-    df <- missdf() %>%
-      select(pos.id19,pos.id38,pos.ID,Amino.acids,rs.dbSNP151,Ensembl.transcriptid,CADD.phred.hg38,CADD.phred.hg19,CADD.phreddiff.38minus19,CADD.raw.hg38,CADD.raw.hg19,CADD.rawdiff.38minus19,CV.AlleleID,CV.Name,CV.ClinicalSignificance,CV.ClinSigSimple,CV.PhenotypeIDS,CV.PhenotypeList,CV.OriginSimple,CV.Protein.position,AAgroup,reactivity,detected.group,react.threshold,target.label,CKpos,HGNCname,M.CAP.score,REVEL.score,MPC.score,PrimateAI.score,
-             DANN.score,fathmm.MKL.coding.score,DOMAINS)
-             # GC.hg19,CpG.hg19,priPhCons.hg19,mamPhCons.hg19,verPhCons.hg19,priPhyloP.hg19,mamPhyloP.hg19,verPhyloP.hg19,GerpRS.hg19,GerpRSpval.hg19,GerpN.hg19,GerpS.hg19,GC.hg38,CpG.hg38,priPhCons.hg38,mamPhCons.hg38,verPhCons.hg38,priPhyloP.hg38,mamPhyloP.hg38,verPhyloP.hg38,GerpRS.hg38,GerpRSpval.hg38,GerpN.hg38,GerpS.hg38
-    
-    df
+    proaadf()
   },
-  options = list(scrollX = TRUE, columnDefs = list(list(targets = "_all")), pageLength = 5)
+  options = list(scrollX = TRUE, columnDefs = list(list(targets = "_all")),
+                 pageLength = 5, rownames= FALSE)
   )
-  
-  
-  
-  
+
  
   ###### LINE PLOTS ##########################
 
@@ -386,12 +358,11 @@ shinyServer(function(input, output, session) {
                                color=groupvar,  
                                hoverinfo = "text",
                                text = ~paste0("<b>",detected.group," ",CKpos,"</b><br><br>",
-                                              "Max score: ", CADD.raw.hg38.max,
-                                              "<br>Mean score: ", CADD.raw.hg38.mean,
+                                              "Max score: ", CADD38.raw.max,
+                                              "<br>Mean score: ", CADD38.raw.mean,
                                               "<br>Reactivity: ",reactivity,
                                               "<br>ClinVar patho&likelypatho AA overlap: ", overlap.CV.sumIDsPerAA,
-                                              "<br>ClinVar IDs: ", CV.AlleleID.list,
-                                              "<br>COSMIC IDs: ", COS.LEGACY.MUTID.list))
+                                              "<br>ClinVar IDs: ", CV.AlleleID))
     }
     #PHRED CADD
     if(SCOREname == "CADD38 PHRED"){
@@ -404,12 +375,11 @@ shinyServer(function(input, output, session) {
                                color=groupvar,  
                                hoverinfo = "text",
                                text = ~paste0("<b>", detected.group, " ", CKpos, "</b><br><br>",
-                                              "Max score: ", CADD.phred.hg38.max,
-                                              "<br>Mean score: ", CADD.phred.hg38.mean,
+                                              "Max score: ", CADD38.phred.max,
+                                              "<br>Mean score: ", CADD38.phred.mean,
                                               "<br>Reactivity: ",reactivity,
                                               "<br>ClinVar patho&likelypatho AA overlap: ", overlap.CV.sumIDsPerAA,
-                                              "<br>ClinVar IDs: ", CV.AlleleID.list,
-                                              "<br>COSMIC IDs: ", COS.LEGACY.MUTID.list))
+                                              "<br>ClinVar IDs: ", CV.AlleleID))
     }
     #FATHMM
     if(SCOREname == "FATHMM-mkl"){
@@ -422,12 +392,11 @@ shinyServer(function(input, output, session) {
                                color=groupvar,  
                                hoverinfo = "text",
                                text = ~paste0("<b>", detected.group, " ", CKpos, "</b><br><br>",
-                                              "Max score: ", fathmmMKL.coding.score.max,
-                                              "<br>Mean score: ", fathmmMKL.coding.score.mean,
+                                              "Max score: ", fathmmMKL.max,
+                                              "<br>Mean score: ", fathmmMKL.mean,
                                               "<br>Reactivity: ",reactivity,
                                               "<br>ClinVar patho&likelypatho AA overlap: ", overlap.CV.sumIDsPerAA,
-                                              "<br>ClinVar IDs: ", CV.AlleleID.list,
-                                              "<br>COSMIC IDs: ", COS.LEGACY.MUTID.list))
+                                              "<br>ClinVar IDs: ", CV.AlleleID))
     }
     #DANN
     if(SCOREname == "DANN"){
@@ -440,12 +409,11 @@ shinyServer(function(input, output, session) {
                                color=groupvar, 
                                hoverinfo = "text",
                                text = ~paste0("<b>", detected.group, " ", CKpos, "</b><br><br>",
-                                              "Max score: ", DANN.score.max,
-                                              "<br>Mean score: ", DANN.score.mean,
+                                              "Max score: ", DANN.max,
+                                              "<br>Mean score: ", DANN.mean,
                                               "<br>Reactivity: ",reactivity,
                                               "<br>ClinVar patho&likelypatho AA overlap: ", overlap.CV.sumIDsPerAA,
-                                              "<br>ClinVar IDs: ", CV.AlleleID.list,
-                                              "<br>COSMIC IDs: ", COS.LEGACY.MUTID.list))
+                                              "<br>ClinVar IDs: ", CV.AlleleID))
                                
                                
     }
@@ -464,206 +432,63 @@ shinyServer(function(input, output, session) {
   }
   
   
-  
-  # [4] missense level BOXPLOTS
-  makeBoxplotsMissense <- function(df, xvar, yvar,
-                                   boxvar, aavar, sizevar, PROTEINname, SCOREname) {
-    xvar <- enquo(xvar) #. detonly.group
-    yvar <- enquo(yvar)
-    boxvar <- enquo(boxvar) # detected.group
-    aavar <- enquo(aavar) # Amino.acids
-    sizevar <- enquo(sizevar) # variation.size
-    
-    
-    # after unused factors  dropped
-    Cdf <- df %>% filter(aaref == "C")
-    Kdf <- df %>% filter(aaref == "K")
-    
-    
-    CKsubs <- subplot(
-      plot_ly(Cdf, x = ~as.numeric(detonly.group), y=yvar, color = boxvar, 
-              type = "box", boxpoints = FALSE, hoverinfo = 'y', alpha = 0.3, 
-              colors=c("#e31a1c", "#225ea8", # ck
-                       "#dd3497","#ae017e","#7a0177", # high
-                       "#efedf5","#bcbddc","#756bb1", # med
-                       "#deebf7","#9ecae1","#3182bd", # low
-                       "#02818a", "#016c59", # tar pan
-                       "#ece2f0"),
-              legendgroup= "g1") %>%            
-        add_markers(alpha = 0.8,
-                    x=~jitter(as.numeric(detonly.group)),
-                    color = ~as.factor(Amino.acids), 
-                    size = sizevar,
-                    stroke = I("black"), span = I(1),
-                    marker = list(sizes = c(6,7), sizemode = 'area'),
-                    hoverinfo = "text",
-                    text = ~paste0("<b>",Amino.acids," ",CKpos,"</b><br><br>",
-                                   "Group: ",detonly.group,
-                                   "<br>Blosum62: ", BLOSUM62, 
-                                   "<br>ClinVar: ", CV.AlleleID,
-                                   "<br>ClinVar Sig.: ", CLIN.SIG, 
-                                   "<br>COSMIC ID: ", COSMIC.GENOMIC.MUTATION.ID, 
-                                   "<br>GnomAD AF: ", gnomAD.AF,
-                                   "<br>Mutation Prediction: ", MutPred.Top5features
-                    ),showlegend=FALSE),
-      
-      plot_ly(Kdf, x = ~as.numeric(detonly.group), y=yvar, color = boxvar, 
-               type = "box", boxpoints = FALSE, hoverinfo = 'y', alpha = 0.3, 
-              colors=c("#e31a1c", "#225ea8", # ck
-                       "#dd3497","#ae017e","#7a0177", # high
-                       "#efedf5","#bcbddc","#756bb1", # med
-                       "#deebf7","#9ecae1","#3182bd", # low
-                       "#02818a", "#016c59", # tar pan
-                       "#ece2f0"),
-              legendgroup="g2") %>%     
-        add_markers(alpha = 0.8, 
-                    x = ~jitter(as.numeric(detonly.group)), 
-                    color = ~as.factor(Amino.acids), 
-                    size = sizevar,
-                    stroke = I("black"), span = I(1),
-                    marker = list(sizes = c(6,7), sizemode = 'area'),
-                    hoverinfo = "text",
-                    text = ~paste0("<b>",Amino.acids," ",CKpos,"</b><br><br>",
-                                   "Group: ",detonly.group,
-                                   "<br>Blosum62: ", BLOSUM62, 
-                                   "<br>ClinVar: ", CV.AlleleID,
-                                   "<br>ClinVar Sig.: ", CLIN.SIG, 
-                                   "<br>COSMIC ID: ", COSMIC.GENOMIC.MUTATION.ID, 
-                                   "<br>GnomAD AF: ", gnomAD.AF,
-                                   "<br>Mutation Prediction: ", MutPred.Top5features
-                    ),showlegend=FALSE),
-      
-      shareY = TRUE, widths = c(0.4, 0.4), margin = 0, titleX=TRUE
-    )
-    
-    TITLEplot = paste("Distribution of missense-level", SCOREname, "\nscores for", PROTEINname, "CpDAA's")
-    yaxis <- list(title = SCOREname, showgrid = FALSE, zeroline = FALSE, showline = FALSE, showticklabels = TRUE)
-    margin <- list(autoexpand = TRUE, t = 110, b=110)
-    CKsubs <- CKsubs %>%
-      layout(title = TITLEplot, autosize = TRUE,
-             yaxis = yaxis,
-             margin=margin,
-             legend = list(orientation = 'h', y = -0.3, x=0, 
-                           font = list(family = "sans-serif", size = 12, color = "#000")), 
-             xaxis = list(title = "Detected Cysteine", showticklabels = FALSE), 
-             xaxis2 = list(title = "Detected Lysine", showticklabels = FALSE))
-    return(CKsubs)
-  }
-  
-  ####### CADD PLOTLY 2 equation 4
-  output$caddPlotly2 <- renderPlotly({
-    if(input$caddTypeInput2 == "Raw"){
-      if(input$assemblyCADD2 == "GRCh37"){
-        cadd <- makeBoxplotsMissense(popdf(), detonly.group, 
-                                     CADD.raw.hg19, detected.group, Amino.acids, 
-                                     variation.size, input$selectGene2, "CADD37 RAW")
-      }
-      if(input$assemblyCADD2 == "GRCh38"){
-        cadd <- makeBoxplotsMissense(popdf(), detonly.group, 
-                                     CADD.raw.hg38, detected.group, Amino.acids, 
-                                     variation.size, input$selectGene2, "CADD38 RAW")
-      }
-    } # end raw
-    if(input$caddTypeInput2 == "PHRED"){
-      if(input$assemblyCADD2 == "GRCh37"){
-        cadd <- makeBoxplotsMissense(popdf(), detonly.group, 
-                                     CADD.phred.hg19, detected.group, Amino.acids, 
-                                     variation.size, input$selectGene2, "CADD37 PHRED")
-      }
-      if(input$assemblyCADD2 == "GRCh38"){
-        cadd <- makeBoxplotsMissense(popdf(), detonly.group, 
-                                     CADD.phred.hg38, detected.group, Amino.acids, 
-                                     variation.size, input$selectGene2, "CADD38 PHRED")
-      }
-    } # end phred
-    cadd
-  })
-  
-  ###### FATHMM PLOTLY 2
-  output$fathmmPlotly2 <- renderPlotly({
-    fathmm <- makeBoxplotsMissense(popdf(), detonly.group, fathmm.MKL.coding.score, 
-                                   detected.group, Amino.acids, variation.size, 
-                                   input$selectGene2, "FATHMM-mkl")
-    fathmm
-  })
-  
-  ######## DANN PLOTLY 2
-  output$dannPlotly2 <- renderPlotly({
-    dann <- makeBoxplotsMissense(popdf(), detonly.group, 
-                                 DANN.score, 
-                                 detected.group, Amino.acids, variation.size, 
-                                 input$selectGene2, "DANN")
-    dann
-  })
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
   ####### CADD PLOTLY 1
   output$caddPlotly1 <- renderPlotly({
     if(input$caddTypeInput == "Raw"){
       if(input$lineTypeCADD == "Combo"){
-        cadd <- makeCaddLines(proaadf(), matched.aapos, CADD.raw.hg38.max, 
-                              CADD.raw.hg38.mean, CADD.raw.hg19.max, 
-                              CADD.raw.hg19.mean, CKpos, AAgroup,
+        cadd <- makeCaddLines(proaadf(), matched.aapos, CADD38.raw.max,
+                              CADD38.raw.mean, CADD37.raw.max,
+                              CADD37.raw.mean, CKpos, AAgroup,
                               input$selectGene1, "CADD RAW")
-        
-      }
+       }
       if(input$lineTypeCADD == "CK-specific"){
-        cadd <- makeLinePlotsCK(proaadf(), matched.aapos, CADD.raw.hg38.mean, 
-                                reactivity, aaref, detected.group, AAgroup,  
+        cadd <- makeLinePlotsCK(proaadf(), matched.aapos, CADD38.raw.mean,
+                                reactivity, aaref, detected.group, AAgroup,
                                 input$selectGene1, "CADD38 RAW")
       }
     } # end raw
     if(input$caddTypeInput == "PHRED"){
       if(input$lineTypeCADD == "Combo"){
-        cadd <- makeCaddLines(proaadf(), matched.aapos, CADD.phred.hg38.max, 
-                              CADD.phred.hg38.mean, CADD.phred.hg19.max, 
-                              CADD.phred.hg19.mean, CKpos, AAgroup,
+        cadd <- makeCaddLines(proaadf(), matched.aapos, CADD38.phred.max,
+                              CADD38.phred.mean, CADD37.phred.max,
+                              CADD37.phred.mean, CKpos, AAgroup,
                               input$selectGene1, "CADD PHRED")
       }
       if(input$lineTypeCADD == "CK-specific"){
-        cadd <- makeLinePlotsCK(proaadf(), matched.aapos, CADD.phred.hg38.mean, 
-                                  reactivity, aaref, detected.group, AAgroup,  
+        cadd <- makeLinePlotsCK(proaadf(), matched.aapos, CADD38.phred.mean,
+                                  reactivity, aaref, detected.group, AAgroup,
                                   input$selectGene1, "CADD38 PHRED")
       }
     } # end phred
     cadd
   })
-  
-  ###### FATHMM PLOTLY 1
+
+  # ###### FATHMM PLOTLY 1
   output$fathmmPlotly1 <- renderPlotly({
     if(input$lineTypeFathmm == "Combo"){
-      fathmm <- makeLinePlots1assembly(proaadf(), matched.aapos, fathmmMKL.coding.score.max, 
-                                       fathmmMKL.coding.score.mean, CKpos, AAgroup,
+      fathmm <- makeLinePlots1assembly(proaadf(), matched.aapos, fathmmMKL.max,
+                                       fathmmMKL.mean, CKpos, AAgroup,
                                        input$selectGene1, "FATHMM-mkl")
     }
     if(input$lineTypeFathmm == "CK-specific"){
-      fathmm <- makeLinePlotsCK(proaadf(), matched.aapos, fathmmMKL.coding.score.mean, 
-                                reactivity, aaref, detected.group, AAgroup,  
+      fathmm <- makeLinePlotsCK(proaadf(), matched.aapos, fathmmMKL.mean,
+                                reactivity, aaref, detected.group, AAgroup,
                                 input$selectGene1, "FATHMM-mkl")
     }
     fathmm
   })
 
-  ######## DANN PLOTLY 1
+  # ######## DANN PLOTLY 1
   output$dannPlotly1 <- renderPlotly({
     if(input$lineTypeDann == "Combo"){
-      dann <- makeLinePlots1assembly(proaadf(), matched.aapos, 
-                                     DANN.score.max, DANN.score.mean, 
+      dann <- makeLinePlots1assembly(proaadf(), matched.aapos,
+                                     DANN.max, DANN.mean,
                                      CKpos, AAgroup,input$selectGene1, "DANN")
     }
     if(input$lineTypeDann == "CK-specific"){
-      dann <- makeLinePlotsCK(proaadf(), matched.aapos, DANN.score.mean, 
-                         reactivity, aaref, detected.group, AAgroup,  
+      dann <- makeLinePlotsCK(proaadf(), matched.aapos, DANN.mean,
+                         reactivity, aaref, detected.group, AAgroup,
                          input$selectGene1, "DANN")
     }
     dann
