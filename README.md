@@ -1,4 +1,4 @@
-# Welcome to MAP project repo 
+# ChemoProteomic-Detected Amino Acids project repo
 This project is a collaboration between the [Backus lab](https://www.backuslab.com/) and [Arboleda lab](https://www.arboledalab.org/) at UCLA. Our paper, **From Chemoproteomic-Detected Amino Acids to Genomic Coordinates: Insights into Precise Multi-omic Data Integration**, can be found on [bioRxiv](https://www.biorxiv.org/content/10.1101/2020.07.03.186007v1). 
 
 **To interactive with all CpDAA data analyzed in our study, please check out our CpDAA App:** http://mfpalafox.shinyapps.io/CpDAA
