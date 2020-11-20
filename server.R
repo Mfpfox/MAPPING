@@ -104,7 +104,7 @@ shinyServer(function(input, output, session) {
     DT::datatable(xref, escape=FALSE, 
                   options = list(
                     pageLength = 5, autoWidth = TRUE,
-                    columnDefs = list(list(targets = c(6,10,11,12), 
+                    columnDefs = list(list(targets = c(6,12,13,14), 
                                            width = '600px')), scrollX = TRUE
                   )))
   

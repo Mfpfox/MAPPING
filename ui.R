@@ -20,10 +20,12 @@ addResourcePath("vid", directoryPath = './www')
 trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 #######################################
 header <- dashboardHeader(
-  title = "CpDAA DB"
+  title = "CpDAA App", 
+  titleWidth = 200
 )
 #######################################
 sidebar <- dashboardSidebar( 
+  width=200,
   sidebarMenu(id="menu1",
               menuItem("Welcome", icon = icon("user"), tabName="Welcome"),
               menuItem("Analysis", icon = icon("table"), tabName="aalevel1")
@@ -34,7 +36,7 @@ sidebar <- dashboardSidebar(
 body <- dashboardBody(
   ### changing theme
   shinyDashboardThemes(
-    theme = "grey_light" #blue_gradient grey_light
+    theme = "grey_dark" #blue_gradient grey_light
   ),
 
   tabItems(
@@ -56,7 +58,8 @@ body <- dashboardBody(
                   width = 5,
                   column(12, align="center",
                          h3("Manual curation of CpDAA in 4,526 UniProtKB proteins"), 
-                         div(img(img(src ="workflow_shiny.png", height = "600", width = "600")), 
+                         br(),
+                         div(img(img(src ="workflow_shiny.png", height = "600", width = "650")), 
                          style="text-align: center"), 
                          br(),
                          br(),
@@ -77,10 +80,10 @@ body <- dashboardBody(
                          br(),
                          h3("CpDAA Sources"),
                          tags$ol(
-                           tags$li("Weerapana, E., C. Wang, G. M. Simon, F. Richter, S. Khare, M. B. Dillon, D. A. Bachovchin, K. Mowen, D. Baker, and B. F. Cravatt. 2010. 'Quantitative Reactivity Profiling Predicts Functional Cysteines in Proteomes.' Nature 468 (7325): 790–95."),
-                           tags$li("Backus"), 
-                           tags$li("Hacker, S. M., K. M. Backus, M. R. Lazear, S. Forli, B. E. Correia, and B. F. Cravatt. 2017. 'Global Profiling of Lysine Reactivity and Ligandability in the Human Proteome.' Nature Chemistry 9 (12): 1181–90."), 
-                           tags$li("Cysteine isoTOP 2019 coming soon"), style="padding-left: 2em"),
+                           tags$li("Weerapana, E., C. Wang, G. M. Simon, F. Richter, S. Khare, M. B. Dillon, D. A. Bachovchin, K. Mowen, D. Baker, and B. F. Cravatt.",a("2010", href="https://www.nature.com/articles/nature09472"), "Quantitative Reactivity Profiling Predicts Functional Cysteines in Proteomes. Nature 468 (7325): 790–95."),
+                           tags$li("Backus KM, Correia BE, Lum KM, Forli S, Horning BD, Gonzalez-Paez GE, Chatterjee S, Lanning BR, Teijaro JR, Olson AJ, et al.", a("2016", href="https://www.nature.com/articles/nature18002"), "Proteome-wide covalent ligand discovery in native biological systems. Nature 534: 570–574"), 
+                           tags$li("Hacker, S. M., K. M. Backus, M. R. Lazear, S. Forli, B. E. Correia, and B. F. Cravatt.", a("2017", href="https://www.nature.com/articles/nchem.2826"), "Global Profiling of Lysine Reactivity and Ligandability in the Human Proteome. Nature Chemistry 9 (12): 1181–90."), 
+                           tags$li("Cysteine 2019 isoTOP-ABPP data: 10.6019/PXD022151"), style="padding-left: 2em"),
                          br(),
                          br()
                   )
@@ -136,43 +139,58 @@ body <- dashboardBody(
                   solidHeader = F, collapsible = F, collapsed = F,
                   width=6, 
                   column(12, align="center",
-                         h4("Reactive CpDAA Protein 3D mapping"),
+                         h3("CpD Cysteine of Caspase-8 protein, structure colored by max missense CADD score"),
                          br(),
-                         h4("Caspase-8"),
                          tags$video(src="vid/CASP8_CADD38max_blues_hires.mp4",
-                                    width="600px", height="500px",
+                                    width="750px", height="500px",
                                     type="video/mp4", controls="controls")
                          
                   )
-                  # column(4, 
-                  #        tags$video(src="vid/G6PD_CADD38max_blue_hiRes.mp4",
-                  #                   width="500px", height="400px",
-                  #                   type="video/mp4", controls="controls")
-                  #        )
               ),
-            box(solidHeader = F, collapsible = F, collapsed = F,
+              box(
+                solidHeader = F, collapsible = F, collapsed = F,
                 width=6, 
-                column(12, 
-                       h5("CpDAA is currently in development (Version 0.1)"),
-                       h5("Contact email: "),
-                       h5("citation hyperlink")
-                       )
-            ) # end box
-            ) # end fluid row
+                column(12, align="center",
+                       h3("CpD Lysine of G6PD protein, structure colored by max missense CADD scores"),
+                       br(),
+                       tags$video(src="vid/G6PD_CADD38max_blue_hiRes.mp4",
+                                  width="750px", height="500px",
+                                  type="video/mp4", controls="controls")
+                       
+                ) # end col
+              )# end box
+            ), # end row
+            fluidRow(
+              box(solidHeader = F, collapsible = F, collapsed = F,
+                  width=6, 
+                  column(12, 
+                         h5("CpDAA is currently in development (Version 0.1)"),
+                         h5("Contact email: ", a("mfpalafox@ucla.edu", href="mfpalafox@ucla.edu")),
+                         h5("If you find CpDAA App helpful please cite our work, ", a("From Chemoproteomic-Detected Amino Acids to Genomic Coordinates: Insights into Precise Multi-omic Data Integration", href="https://www.biorxiv.org/content/10.1101/2020.07.03.186007v2"))
+                  )
+              ) # end box
+            )
     ), # end tabItem
 
 ############## ANALYSIS #####################################
   tabItem(tabName="aalevel1",
     fluidPage(title = "Detected vs Undetected AA Analysis",
-      tabsetPanel(     
-        tabPanel(title = h4("Score mapping"),  
-                 fluidRow(
-                   box(
-                       solidHeader = F, collapsible = T, collapsed = F,
-                       width = 12,
+              #tags$head(tags$style('h4 {color:white;}')),
+      #         tags$style(HTML("
+      #      .navbar-nav li a:hover, .navbar-nav > .active > a {
+      #       color: #fff !important;
+      #       background-color:#2b8cc4 !important;
+      #       background-image: none !important;
+      #   }")),
+      # tabsetPanel(     
+      #   tabPanel(title = h4("Score mapping"),  type="pills",
+             fluidRow(
+               box(
+                   solidHeader = F, collapsible = T, collapsed = F,
+                   width = 12,
                    sidebarLayout(
                      sidebarPanel(
-                       h3("Pathogenicity score analyis of Chemo-Proteomic Detected and Undetected  Cysteine and Lysine in 4,526 proteins"),
+                       h3("Pathogenicity score analyis of Chemo-Proteomic Detected and Undetected  Cysteine and Lysine in 4,526 proteins", style = "color: black"),
                  fluidRow(
                    column(6,
                       selectizeInput("selectGene1", "Select", choices=NULL, 
@@ -311,8 +329,8 @@ body <- dashboardBody(
                         )
                     ) # end box
                   ) # end fluidRow
-        )  # end tab panel
-      ) # end tabset panel w/ OPTIONS 
+        #)  # end tab panel
+      #) # end tabset panel w/ OPTIONS 
     )  # end fluid page 
   ) # end tabItem
 
