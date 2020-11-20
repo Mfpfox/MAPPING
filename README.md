@@ -2,10 +2,10 @@
 This project is a collaboration between the [Backus lab](https://www.backuslab.com/) and [Arboleda lab](https://www.arboledalab.org/) at UCLA. Our paper, **From Chemoproteomic-Detected Amino Acids to Genomic Coordinates: Insights into Precise Multi-omic Data Integration**, can be found on [bioRxiv](https://www.biorxiv.org/content/10.1101/2020.07.03.186007v1). 
 
 
-#### [STEP 1] Pre-processing of published cysteine and lysine chemoproteomic datasets
+### [STEP 1] Pre-processing of published cysteine and lysine chemoproteomic datasets
 *Combining quantitative chemoproteomics studies for meta-analysis is hindered by inter-study variability in experimental design and data normalization and quantification pipelines. Additionally, differences in available meta-data and file formats from chemoproteomic studies limits automated large-scale integration{}. Therefore, the cysteine isoTOP-ABPP experiments from 2012 and 2019 were kept separate for our analysis of reactivity and missense pathogenicity.*
 
-❏    For available residue-level chemoproteomic result files, filter out peptides with multiple amino acids marked as modified (e.g. MAC*ALC*AEK)
+❏    For available residue-level chemoproteomic result files, filter out peptides with multiple amino acids marked as modified (e.g. MA**C**AL**C**AEK)
 
 ❏    Apply rigorous filtering to detected peptide results, such as setting minimum # of times residue must be detected in replicate samples
 
@@ -17,10 +17,11 @@ This project is a collaboration between the [Backus lab](https://www.backuslab.c
 
 ❏    Label filtered chemoproteomic residue-level data by position ID key (e.g. ‘P11413_K170’) in order to account for all unique CpDAA positions in UniProtKB proteins (UKBposID() function in maplib.py)
 
-#### [STEP 2] Mapping residue-level chemoproteomic data to an annotation reference proteome 
+### [STEP 2] Mapping residue-level chemoproteomic data to an annotation reference proteome 
 *Instead of merging and reprocessing raw results from several chemoproteomic studies, we re-mapped all residue-level data to a version of the UniProtKB human proteome serving as our functional annotation reference in order to facilitate comparisons between annotated sets of detected cysteines and lysines. For some chemoproteomic studies in our analysis, the original search database FASTA file was not accessible online, and instead we used a version of UniProtKB canonical sequences released in the same year (release 2012_11) as the version used in the study. The python scripts below were used to A) find the closest available UniProtKB release matching positions of CpDAA in chemoproteomic results file and B) compare canonical sequences from two UniProtKB releases and note sequence differences.* 
 
 **checkCpDAAinUKB.py**
+
 ❏    Input parameters: 
 
   ❏    UniProtKB FASTA filename
@@ -42,6 +43,7 @@ This project is a collaboration between the [Backus lab](https://www.backuslab.c
 ❏    Saves sequence checked CpDAA results as .csv file
 
 **compareCanonicalSequences.py**
+
 ❏    Input parameters: 
 
   ❏    UniProtKB FASTA filename A
@@ -70,7 +72,7 @@ This project is a collaboration between the [Backus lab](https://www.backuslab.c
 
 ❏    Modifies the FASTA-B data frame with columns for comparison results
 
-#### [STEP 3] Prep for dbNSFP mapping with UniProtKB BED file (from 2018 to match sequence versions)
+### [STEP 3] Prep for dbNSFP mapping with UniProtKB BED file (from 2018 to match sequence versions)
 *Goal of annotating UniProt stable IDs by GRCh38 chromosome coordinates using genomic coordinate mappings from McGarvey et al. 2019.*
 
 ❏    Search for UniProt stable IDs in BED file, drop protein IDs not contained in BED
@@ -83,7 +85,7 @@ This project is a collaboration between the [Backus lab](https://www.backuslab.c
 
 ❏    Labels residue-level rows with ‘detected’ or ‘undetected’ flag, based on whether residue was identified in chemoproteomic studies
 
-#### [STEP 4] Identify Ensembl protein IDs with identical sequences in order to map transcript-dependent annotations (see Table X with mapping terms) such as gene constraint metrics.
+### [STEP 4] Identify Ensembl protein IDs with identical sequences in order to map transcript-dependent annotations (see Table X with mapping terms) such as gene constraint metrics.
 *Identifies Ensembl IDs from a particular database release that are associated with sequences identical to a reference sequence from UniProtKB. Outputs a custom cross-reference key validated for equivalent protein sequences between UniProtKB and Ensembl releases. Includes columns for Ensembl IDs, UniProtKB IDs, HGNC info, protein length, genomic coordinates pulled from Ensembl FASTA (assembly, chr, cds start, cds stop).*
 
 **identicalProSequenceChecker.py**
@@ -109,15 +111,17 @@ This project is a collaboration between the [Backus lab](https://www.backuslab.c
 ❏    Saves custom xref key as “{Ensembl release}  CheckedProSeq_ENSPtoUKB.csv”
 
 
-#### [STEP 5] Map CpDAA to dbNSFP pathogenicity scores, CADD v1.4 GRCh37 scores, and ClinVar.
+### [STEP 5] Map CpDAA to dbNSFP pathogenicity scores, CADD v1.4 GRCh37 scores, and ClinVar.
 *The following scripts are not modular (hardcoded file names) and were used to map chemoproteomic annotations from 3 published studies. The tasks performed by each script are described below.*
 
 **Pmap1_parseID_correction.py**
+
 ❏    Filters dbNSFP with UKB ID chr dictionary, keep rows with UniProtKB stable ID match
 
 ❏    Adds columns 'matched_UKBID' 'matched_aapos' 'matched_index' from parsing dbNSFP row lists
 
 **Pmap2_dbNSFP_CysLysfilter.py**
+
 ❏    Filters dbNSFP ID matched files for only AA reference column values that match AA type of CpDAA data (our study looks at both cysteines and lysines)
 
 ❏    Make position dictionary file of CpDAA data (get_pos_dictionary() function in maplib.py)
@@ -133,6 +137,7 @@ This project is a collaboration between the [Backus lab](https://www.backuslab.c
 ❏    Saves files with dbNSFP and CpDAA annotations
 
 **Pmap4_dbNSFP_mapped_CADD37.py**
+
 ❏    Reads in CADD v1.4 model GRCh37 chromosome-parsed files 
 
 ❏    Maps CADD file columns to annotated files from Pmap3_findtargetmatched_dbNSFP.py using GRCh37-based coordinate key IDs
