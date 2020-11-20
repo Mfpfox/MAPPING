@@ -1,6 +1,8 @@
 # Welcome to MAP project repo 
 This project is a collaboration between the [Backus lab](https://www.backuslab.com/) and [Arboleda lab](https://www.arboledalab.org/) at UCLA. Our paper, **From Chemoproteomic-Detected Amino Acids to Genomic Coordinates: Insights into Precise Multi-omic Data Integration**, can be found on [bioRxiv](https://www.biorxiv.org/content/10.1101/2020.07.03.186007v1). 
 
+**To interactive with all CpDAA data analyzed in our study, please check out our CpDAA App: ** http://mfpalafox.shinyapps.io/CpDAA
+
 
 ### [STEP 1] Pre-processing of published cysteine and lysine chemoproteomic datasets
 *Combining quantitative chemoproteomics studies for meta-analysis is hindered by inter-study variability in experimental design and data normalization and quantification pipelines. Additionally, differences in available meta-data and file formats from chemoproteomic studies limits automated large-scale integration{}. Therefore, the cysteine isoTOP-ABPP experiments from 2012 and 2019 were kept separate for our analysis of reactivity and missense pathogenicity.*
