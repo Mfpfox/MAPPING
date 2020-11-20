@@ -140,7 +140,7 @@ body <- dashboardBody(
                          br(),
                          h4("Caspase-8"),
                          tags$video(src="vid/CASP8_CADD38max_blues_hires.mp4",
-                                    width="1000px", height="700px",
+                                    width="600px", height="500px",
                                     type="video/mp4", controls="controls")
                          
                   )

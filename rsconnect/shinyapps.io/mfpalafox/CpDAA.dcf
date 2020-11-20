@@ -1,0 +1,13 @@
+name: CpDAA
+title: CpDAA
+username:
+account: mfpalafox
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3226888
+bundleId: 3856688
+url: https://mfpalafox.shinyapps.io/CpDAA/
+when: 1605277628.71946
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: _config.yml|README.md|www/.DS_Store|www/G6PD_CADD38max_blue_hiRes.mp4|.idea|.ipynb_checkpoints|app_versions|BEST_PRACTICE|README_MARKDOWNS
