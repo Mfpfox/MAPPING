@@ -4,21 +4,28 @@ This project is a collaboration between the [Backus lab](https://www.backuslab.c
 
 #### [STEP 1] Pre-processing of published cysteine and lysine chemoproteomic datasets
 *Combining quantitative chemoproteomics studies for meta-analysis is hindered by inter-study variability in experimental design and data normalization and quantification pipelines. Additionally, differences in available meta-data and file formats from chemoproteomic studies limits automated large-scale integration{}. Therefore, the cysteine isoTOP-ABPP experiments from 2012 and 2019 were kept separate for our analysis of reactivity and missense pathogenicity.*
+
 ❏    For available residue-level chemoproteomic result files, filter out peptides with multiple amino acids marked as modified (e.g. MAC*ALC*AEK)
+
 ❏    Apply rigorous filtering to detected peptide results, such as setting minimum # of times residue must be detected in replicate samples
+
 ❏    For reactivity profiling results, average ratio (R) values across samples in order to assign one R value per detected residue (avg_reactivity() function in maplib.py)
+
 ❏    Filter out residues with average R values < 0.5 
+
 ❏    Label all residues from reactivity profiling experiments as Low, Medium, or High based on user-defined R value range (add_thresholds() function in maplib.py)
+
 ❏    Label filtered chemoproteomic residue-level data by position ID key (e.g. ‘P11413_K170’) in order to account for all unique CpDAA positions in UniProtKB proteins (UKBposID() function in maplib.py)
 
 #### [STEP 2] Mapping residue-level chemoproteomic data to an annotation reference proteome 
 *Instead of merging and reprocessing raw results from several chemoproteomic studies, we re-mapped all residue-level data to a version of the UniProtKB human proteome serving as our functional annotation reference in order to facilitate comparisons between annotated sets of detected cysteines and lysines. For some chemoproteomic studies in our analysis, the original search database FASTA file was not accessible online, and instead we used a version of UniProtKB canonical sequences released in the same year (release 2012_11) as the version used in the study. The python scripts below were used to A) find the closest available UniProtKB release matching positions of CpDAA in chemoproteomic results file and B) compare canonical sequences from two UniProtKB releases and note sequence differences.* 
+
 ❏    checkCpDAAinUKB.py
 ❏    Input parameters: 
-❏    UniProtKB FASTA filename
-❏    single letter amino acid type (e.g. C for Cysteine)
-❏    residue-level chemoproteomic results filename that includes column for CpDAA keys (added in STEP 1)
-❏    .csv filename for output residue-level data with additional column (boolean) for CpDAA key search results
+  ❏    UniProtKB FASTA filename
+  ❏    single letter amino acid type (e.g. C for Cysteine)
+  ❏    residue-level chemoproteomic results filename that includes column for CpDAA keys (added in STEP 1)
+  ❏    .csv filename for output residue-level data with additional column (boolean) for CpDAA key search results
 ❏    Reads in FASTA using uniprotkbFasta2csv() function in maplib.py
 ❏    Calls make_aapos_key() function in maplib.py on protein sequence column to create key IDs with the  protein ID and positions of all amino acids matching the input parameter for type  (e.g. ‘P11413_C17’) 
 ❏    Reads in residue-level results, makes list from column of position ID keys
