@@ -13,40 +13,20 @@ library(grid)
 library(gridExtra)
 library(XML)
 library(xlsx)
-# library(tidyverse)
 library(ggplot2)
 library(ggpubr)
 library(dplyr)
 library(RColorBrewer)
 library(plotly)
 library(tidyr)
-#---bioconductor packages
-# library(DO.db)
-#library(clusterProfiler)
-#library(enrichplot)
-#library(pathview)
-#library(DOSE)
-#library(Homo.sapiens)
-library(enrichR)
-#organism_human = "org.Hs.eg.db"
-#organism_mouse ='org.Mm.eg.db'
-#library(organism_human, character.only = TRUE)
-#library(organism_mouse, character.only = TRUE)
 
 ## trim function used for comparision group names' processing
 trim <- function (x) gsub("^\\s+|\\s+$", "", x)
-
 ## Uploading file's size requirement (<30MB)
 options(shiny.maxRequestSize = 30*1024^2)
 
-## Start shiny server
 shinyServer(function(input, output, session) {
-
-
-# START observing data  ####
-#######################################
-  #missdf
-
+# START observing data  ###############
   progress <- reactiveValues(time=shiny::Progress$new(style = "old"))
 
   # annotation sources table
@@ -61,12 +41,9 @@ shinyServer(function(input, output, session) {
                                 "data/summary_Det_clinvar_accounting.csv", sep="/"))
 
   # all aa level annotations for CpDAA and undetected equivalent AA
-  aadf <- read.csv(paste(getwd(),
-                        "data/AAlevel_CpDAA_undetected_4526UKBID.csv",sep="/")) 
-  
   dataObs <- reactiveValues(
     aadf = read.csv(paste(getwd(),
-                          "data/AAlevel_CpDAA_undetected_4526UKBID.csv",sep="/"))
+                          "data/AAlevel_CpDAA_undetected_4526UKBID_v2.csv",sep="/"))
   )
 
   # protein level df
@@ -83,7 +60,6 @@ shinyServer(function(input, output, session) {
   # drop down menu to select 1 of 4526 genename ukbID (TMPO redundancy)
   HGNCdf <- read.csv(paste(getwd(), 
     "data/geneName_sort_4526.csv", sep="/"))
-  
 
   # annotation table
   output$AnnoTable <- DT::renderDataTable({
@@ -107,8 +83,7 @@ shinyServer(function(input, output, session) {
                     columnDefs = list(list(targets = c(6,12,13,14), 
                                            width = '600px')), scrollX = TRUE
                   )))
-  
-  
+
   ## DT clinvar missense overlapping AA positions
   output$clinvarTable <- DT::renderDataTable({
     clinvar
@@ -116,14 +91,13 @@ shinyServer(function(input, output, session) {
   options = list(scrollX = TRUE, columnDefs = list(list(targets = "_all")), pageLength = 5)
   )
 
-
-  ## Reactive expression objects
+  ## AA level DF
   aadf <- reactive({
     df <- dataObs$aadf %>% 
       mutate(AAgroup = factor(AAgroup, levels = c(
         "Detected C",
-        "Undetected C",
         "Detected K",
+        "Undetected C",
         "Undetected K"
       ))) %>%
       mutate(aaref = factor(aaref, levels = c(
@@ -142,6 +116,8 @@ shinyServer(function(input, output, session) {
   output$aa1Table <- DT::renderDataTable({
     df <- aadf() %>% 
       filter(detected == "Detected")
+    df <- df %>%
+      select(matched.UKBID,HGNCgene,CKpos,reactivity.2012,react.threshold.2012,reactivity.2019,react.threshold.2019,target.label.2012,CV.AlleleID,overlap.CV.sumIDsPerAA,CADD38.raw.mean,CADD38.raw.max,CADD37.raw.mean,CADD37.raw.max,CADDraw.38minus37.mean,CADDraw.38minus37.max,CADD38.phred.mean,CADD38.phred.max,CADD37.phred.mean,CADD37.phred.max,DANN.mean,DANN.max,fathmmMKL.mean,fathmmMKL.max)
     df
   },
   options = list(scrollX = TRUE, columnDefs = list(list(targets = "_all")),
@@ -169,13 +145,15 @@ shinyServer(function(input, output, session) {
   options = list(scrollX = TRUE, columnDefs = list(list(targets = "_all")))
   )
 
+
   proaadf <- eventReactive(input$aasubmit1 , {
     gsym = as.character(trim(input$selectGene1))
     ukb <- aadf() %>% 
       filter(gene.UKBID == gsym) # updated colname for gene + UKBID
     return(ukb)
   })
-  
+
+
   output$aa2Table <- DT::renderDataTable({
     proaadf()
   },
@@ -183,9 +161,9 @@ shinyServer(function(input, output, session) {
                  pageLength = 5, rownames= FALSE)
   )
 
- 
-  ###### LINE PLOTS ##########################
 
+
+  ###### LINE PLOTS ##########################
   # [1] CADD single line plot
   makeCaddLines <- function(df, x_var, y1_var, y2_var, y3_var, y4_var, 
                             ckpos_var, col_var, PROTEINname, SCOREname) {
@@ -207,7 +185,8 @@ shinyServer(function(input, output, session) {
     xaxis <- list(title = "AA position",showline = FALSE,
                   showgrid = FALSE,zeroline=FALSE,showticklabels = TRUE)
     
-    plot <- plot_ly(data=df, x = qx_var, colors=c("#d53e4f", "#fcc5c0", "#08519c", "#9ecae1"))
+    plot <- plot_ly(data=df, x = qx_var, colors=c("#d53e4f", 
+      "#08519c", "#fcc5c0", "#9ecae1"))
     #cadd38 max
     plot <- plot %>% add_trace(y = qy1_var, type = 'scatter',
                                name="GRCh38 max",
@@ -276,7 +255,8 @@ shinyServer(function(input, output, session) {
     xaxis <- list(title = "AA position",showline = FALSE,
                   showgrid = FALSE,zeroline=FALSE,showticklabels = TRUE)
     
-    plot <- plot_ly(data=df, x = qx_var, colors=c("#d53e4f", "#fcc5c0", "#08519c", "#9ecae1"))
+    plot <- plot_ly(data=df, x = qx_var, colors=c("#d53e4f", 
+      "#08519c", "#fcc5c0", "#9ecae1"))
     
     plot <- plot %>% add_trace(y = qy1_var, type = 'scatter',
                                name="Max",
@@ -313,16 +293,13 @@ shinyServer(function(input, output, session) {
                             legend = list(orientation = 'h', y = -0.3))
     return(plot)
   }
-  
-  
-  
+
+
   # [3] CADD CK specific line plots
-  makeLinePlotsCK <- function(df, x_var, y_var, reactivity,line_var, group_var, aa_var, PROTEINname, SCOREname) {
-    reactivity <- enquo(reactivity)  
+  makeLinePlotsCK <- function(df, x_var, y_var,line_var, aa_var, PROTEINname, SCOREname) {
     xvar <- enquo(x_var)
     yvar <- enquo(y_var)
     linevar <- enquo(line_var)
-    groupvar <- enquo(group_var)
     aavar <- enquo(aa_var)
     
     TITLEplot = paste("Cysteine & Lysine mean", SCOREname, "scores for", PROTEINname)
@@ -336,13 +313,11 @@ shinyServer(function(input, output, session) {
                   showgrid = FALSE,zeroline=FALSE,showticklabels = TRUE)
     
     ck <- plot_ly(data=df, x = xvar, 
-                  colors=c("#e31a1c", "#225ea8", # ck
-                           "#dd3497","#ae017e","#7a0177", # high
-                           "#efedf5","#bcbddc","#756bb1", # med
-                           "#deebf7","#9ecae1","#3182bd", # low
-                           "#02818a", "#016c59", # tar pan
-                           "#ece2f0")) # undetected
-    
+                  colors=c("#d53e4f", # det c
+                    "#08519c", # det k
+                    "#fcc5c0", # undet c
+                    "#9ecae1")) # undetk
+
     ck <- ck %>% 
       add_trace(y=yvar, color=linevar, type='scatter', mode='lines',
                 line=list(width=1), hoverinfo="none")
@@ -355,12 +330,12 @@ shinyServer(function(input, output, session) {
                                x=xvar,
                                y=yvar,
                                inherit=FALSE,
-                               color=groupvar,  
+                               color=aavar,  
                                hoverinfo = "text",
-                               text = ~paste0("<b>",detected.group," ",CKpos,"</b><br><br>",
+                               text = ~paste0("<b>",AAgroup," ",CKpos,"</b><br><br>",
                                               "Max score: ", CADD38.raw.max,
                                               "<br>Mean score: ", CADD38.raw.mean,
-                                              "<br>Reactivity: ",reactivity,
+                                              "<br>Reactivity: ",reactivity.2012,
                                               "<br>ClinVar patho&likelypatho AA overlap: ", overlap.CV.sumIDsPerAA,
                                               "<br>ClinVar IDs: ", CV.AlleleID))
     }
@@ -372,12 +347,12 @@ shinyServer(function(input, output, session) {
                                x=xvar,
                                y=yvar,
                                inherit=FALSE,
-                               color=groupvar,  
+                               color=aavar,  
                                hoverinfo = "text",
-                               text = ~paste0("<b>", detected.group, " ", CKpos, "</b><br><br>",
+                               text = ~paste0("<b>", AAgroup, " ", CKpos, "</b><br><br>",
                                               "Max score: ", CADD38.phred.max,
                                               "<br>Mean score: ", CADD38.phred.mean,
-                                              "<br>Reactivity: ",reactivity,
+                                              "<br>Reactivity: ",reactivity.2012,
                                               "<br>ClinVar patho&likelypatho AA overlap: ", overlap.CV.sumIDsPerAA,
                                               "<br>ClinVar IDs: ", CV.AlleleID))
     }
@@ -389,12 +364,12 @@ shinyServer(function(input, output, session) {
                                x=xvar,
                                y=yvar,
                                inherit=FALSE,
-                               color=groupvar,  
+                               color=aavar,  
                                hoverinfo = "text",
-                               text = ~paste0("<b>", detected.group, " ", CKpos, "</b><br><br>",
+                               text = ~paste0("<b>", AAgroup, " ", CKpos, "</b><br><br>",
                                               "Max score: ", fathmmMKL.max,
                                               "<br>Mean score: ", fathmmMKL.mean,
-                                              "<br>Reactivity: ",reactivity,
+                                              "<br>Reactivity: ",reactivity.2012,
                                               "<br>ClinVar patho&likelypatho AA overlap: ", overlap.CV.sumIDsPerAA,
                                               "<br>ClinVar IDs: ", CV.AlleleID))
     }
@@ -406,12 +381,12 @@ shinyServer(function(input, output, session) {
                                x=xvar,
                                y=yvar,
                                inherit=FALSE,
-                               color=groupvar, 
+                               color=aavar, 
                                hoverinfo = "text",
-                               text = ~paste0("<b>", detected.group, " ", CKpos, "</b><br><br>",
+                               text = ~paste0("<b>", AAgroup, " ", CKpos, "</b><br><br>",
                                               "Max score: ", DANN.max,
                                               "<br>Mean score: ", DANN.mean,
-                                              "<br>Reactivity: ",reactivity,
+                                              "<br>Reactivity: ",reactivity.2012,
                                               "<br>ClinVar patho&likelypatho AA overlap: ", overlap.CV.sumIDsPerAA,
                                               "<br>ClinVar IDs: ", CV.AlleleID))
                                
@@ -444,7 +419,7 @@ shinyServer(function(input, output, session) {
        }
       if(input$lineTypeCADD == "CK-specific"){
         cadd <- makeLinePlotsCK(proaadf(), matched.aapos, CADD38.raw.mean,
-                                reactivity, aaref, detected.group, AAgroup,
+                                aaref, AAgroup,
                                 input$selectGene1, "CADD38 RAW")
       }
     } # end raw
@@ -457,7 +432,7 @@ shinyServer(function(input, output, session) {
       }
       if(input$lineTypeCADD == "CK-specific"){
         cadd <- makeLinePlotsCK(proaadf(), matched.aapos, CADD38.phred.mean,
-                                  reactivity, aaref, detected.group, AAgroup,
+                                  aaref, AAgroup,
                                   input$selectGene1, "CADD38 PHRED")
       }
     } # end phred
@@ -473,7 +448,7 @@ shinyServer(function(input, output, session) {
     }
     if(input$lineTypeFathmm == "CK-specific"){
       fathmm <- makeLinePlotsCK(proaadf(), matched.aapos, fathmmMKL.mean,
-                                reactivity, aaref, detected.group, AAgroup,
+                                aaref, AAgroup,
                                 input$selectGene1, "FATHMM-mkl")
     }
     fathmm
@@ -488,7 +463,7 @@ shinyServer(function(input, output, session) {
     }
     if(input$lineTypeDann == "CK-specific"){
       dann <- makeLinePlotsCK(proaadf(), matched.aapos, DANN.mean,
-                         reactivity, aaref, detected.group, AAgroup,
+                         aaref, AAgroup,
                          input$selectGene1, "DANN")
     }
     dann
