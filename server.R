@@ -1,4 +1,3 @@
-
 # source("install/prep.R")
 ## peers certificate error fix- useEnsembl() biomart issue
 library(httr) # added set_config(config(ssl_verifypeer = 0L)) to ID mapping sections
@@ -161,7 +160,48 @@ shinyServer(function(input, output, session) {
                  pageLength = 5, rownames= FALSE)
   )
 
-
+  ## download buttons ##
+  output$downloadProTable <- renderUI({
+    req(xref) # check if dt = NULL
+    downloadButton("DownloadProteins", class="btn-default")
+  })
+  output$DownloadProteins <- downloadHandler(
+    filename = function() {
+      paste("CpDAA_proteinLevel_", Sys.Date(),".csv", sep="")
+    },
+    content = function(file) {
+      write.table(xref, file, sep =",", quote = T, row.names = F, col.names = T)
+    }, contentType = "text"
+  ) # end downloadhandler
+  
+  output$downloadAaTable <- renderUI({
+    req(aadf()) 
+    downloadButton("DownloadCpDAA", class="btn-default")
+  })
+  output$DownloadCpDAA <- downloadHandler(
+    filename = function() {
+      paste("CpDAA_", Sys.Date(),".csv", sep="")
+    },
+    content = function(file) {
+      write.table(aadf(), file, sep =",", quote = T, row.names = F, col.names = T)
+    }, contentType = "text"
+  ) # end downloadhandler
+  
+  output$downloadCVTable <- renderUI({
+    req(clinvar)
+    downloadButton("DownloadClinVarOverlap", class="btn-default")
+  })
+  output$DownloadClinVarOverlap <- downloadHandler(
+    filename = function() {
+      paste("CpDAA_wPathoClinVar_", Sys.Date(),".csv", sep="")
+    },
+    content = function(file) {
+      write.table(clinvar, file, sep =",", quote = T, row.names = F, col.names = T)
+    }, contentType = "text"
+  ) # end downloadhandler
+  
+  
+  
 
   ###### LINE PLOTS ##########################
   # [1] CADD single line plot

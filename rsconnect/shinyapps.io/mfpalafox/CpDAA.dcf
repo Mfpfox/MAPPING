@@ -5,9 +5,9 @@ account: mfpalafox
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 3226888
-bundleId: 3884057
+bundleId: 3927378
 url: https://mfpalafox.shinyapps.io/CpDAA/
-when: 1605862307.9193
+when: 1606825012.60353
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: _config.yml|README.md|www/.DS_Store|.idea|.ipynb_checkpoints|app_versions|BEST_PRACTICE|README_MARKDOWNS
