@@ -1,5 +1,6 @@
 rsconnect/shinyapps.io/mfpalafox/CpDAA.dcf
 HTML_before_CLEANUP/*
+*.bed
 data/*
 app_versions/*
 www/*
