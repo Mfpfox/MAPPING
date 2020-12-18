@@ -1,6 +1,6 @@
-## ChemoProteomic-Detected Amino Acids Mapped to Pathogenicity Predictions and ClinVar
+## ChemoProteomic-Detected Amino Acids (CpDAAs) mapped to missense pathogenicity predictions and ClinVar pathogenic variants
 
-**To interactive with all CpDAA data analyzed in our study, please check out our CpDAA App:** http://mfpalafox.shinyapps.io/CpDAA
+**To interact with all CpDAA data analyzed in our study, please check out the CpDAA App:** http://mfpalafox.shinyapps.io/CpDAA
 
 ### Protocol for mapping:
 
