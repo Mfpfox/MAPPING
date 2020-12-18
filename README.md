@@ -87,7 +87,7 @@
 
 ❏    Labels residue-level rows with ‘detected’ or ‘undetected’ flag, based on whether residue was identified in chemoproteomic studies
 
-#### [STEP 4] Identify Ensembl protein IDs with identical sequences in order to map transcript-dependent annotations (see Table X with mapping terms) such as gene constraint metrics.
+#### [STEP 4] Identify Ensembl protein IDs with identical sequences in order to map transcript-dependent annotations (see Table X with mapping terms) such as gene constraint metrics
 *Identifies Ensembl IDs from a particular database release that are associated with sequences identical to a reference sequence from UniProtKB. Outputs a custom cross-reference key validated for equivalent protein sequences between UniProtKB and Ensembl releases. Includes columns for Ensembl IDs, UniProtKB IDs, HGNC info, protein length, genomic coordinates pulled from Ensembl FASTA (assembly, chr, cds start, cds stop).*
 
 **identicalProSequenceChecker.py**
@@ -113,7 +113,7 @@
 ❏    Saves custom xref key as “{Ensembl release}  CheckedProSeq_ENSPtoUKB.csv”
 
 
-#### [STEP 5] Map CpDAA to dbNSFP pathogenicity scores, CADD v1.4 GRCh37 scores, and ClinVar.
+#### [STEP 5] Map CpDAA to dbNSFP pathogenicity scores, CADD v1.4 GRCh37 scores, and ClinVar
 *The following scripts are not modular (hardcoded file names) and were used to map chemoproteomic annotations from 3 published studies. The tasks performed by each script are described below.*
 
 **Pmap1_parseID_correction.py**
