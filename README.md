@@ -1,19 +1,19 @@
 ## ChemoProteomic-Detected Amino Acids (CpDAAs) mapped to missense pathogenicity predictions and ClinVar pathogenic variants
 
-**To interact with all CpDAA data analyzed in our study, please check out the CpDAA App,** <http://mfpalafox.shinyapps.io/CpDAA>
+**Visit the CpDAA shiny app to visualize score annotations for all CpDAA proteins analyzed in our study** <http://mfpalafox.shinyapps.io/CpDAA>
 
-**To view our manuscript currently under review,** <https://www.biorxiv.org/content/10.1101/2020.07.03.186007v1>
+**Manuscript currently under review** <https://www.biorxiv.org/content/10.1101/2020.07.03.186007v1>
 
 ---
 
 ### Protocol for mapping CpDAA-
 
 #### [STEP 1] Pre-processing of published cysteine and lysine chemoproteomic datasets
-*Combining quantitative chemoproteomics studies for meta-analysis is hindered by inter-study variability in experimental design and data normalization and quantification pipelines. Additionally, differences in available meta-data and file formats from chemoproteomic studies limits automated large-scale integration. Therefore, the cysteine isoTOP-ABPP experiments from 2012 and 2019 were kept separate for our analysis of reactivity and missense pathogenicity.*
+*Combining quantitative chemoproteomics studies for meta-analysis is hindered by inter-study variability in experimental design and data normalization and quantification pipelines. Additionally, differences in available meta-data and file formats from chemoproteomic studies limits automated large-scale integration. Therefore, the legacy cysteine isoTOP-ABPP and the dataset from 2019 were kept separate for reactivity and missense pathogenicity analysis.*
 
 ❏    For available residue-level chemoproteomic result files, filter out peptides with multiple amino acids marked as modified (e.g. MA**C**AL**C**AEK)
 
-❏    Apply rigorous filtering to detected peptide results, such as setting minimum # of times residue must be detected in replicate samples
+❏    Filter detected residue data by applying rigorous peptide filtering, such as setting requirement for minimum # of times residue must be detected in replicate samples
 
 ❏    For reactivity profiling results, average ratio (R) values across samples in order to assign one R value per detected residue, `avg_reactivity()` in maplib.py
 
