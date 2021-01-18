@@ -104,9 +104,10 @@ shinyServer(function(input, output, session) {
         "K"
       ))) %>%
       mutate(detected = factor(detected, levels = c(
-        "Detected",
-        "Undetected"
+        "Undetected", # 1
+        "Detected" # 2
       ))) %>%
+      transform(detectedInt = as.integer(detected)) %>% 
       mutate(matched.aapos = as.integer(matched.aapos))
     return(df)
   }) # end aadf()
@@ -141,7 +142,8 @@ shinyServer(function(input, output, session) {
     names(df) <- "CpDAA Protein Summary"
     df
   },
-  options = list(scrollX = TRUE, columnDefs = list(list(targets = "_all")))
+  options = list(scrollX = TRUE, columnDefs = list(list(targets = "_all")),
+                 pageLength = 5)
   )
 
 
@@ -199,318 +201,236 @@ shinyServer(function(input, output, session) {
       write.table(clinvar, file, sep =",", quote = T, row.names = F, col.names = T)
     }, contentType = "text"
   ) # end downloadhandler
-  
-  
-  
 
-  ###### LINE PLOTS ##########################
-  # [1] CADD single line plot
-  makeCaddLines <- function(df, x_var, y1_var, y2_var, y3_var, y4_var, 
-                            ckpos_var, col_var, PROTEINname, SCOREname) {
-    qx_var <- enquo(x_var)
-    qy1_var <- enquo(y1_var)
-    qy2_var <- enquo(y2_var)
-    qy3_var <- enquo(y3_var)
-    qy4_var <- enquo(y4_var)
-    qckpos_var <- enquo(ckpos_var)
-    qcol_var <- enquo(col_var)
-    TITLEplot = paste("AA-level summary of",
-                      SCOREname, "scores for", PROTEINname)
-    yaxis <- list(title = SCOREname,
-                  showgrid = FALSE,zeroline = FALSE,showline = FALSE,
-                  showticklabels = TRUE)
-    
-    margin <- list(autoexpand = TRUE,t = 110,b = 110) # copy 
-    
-    xaxis <- list(title = "AA position",showline = FALSE,
-                  showgrid = FALSE,zeroline=FALSE,showticklabels = TRUE)
-    
-    plot <- plot_ly(data=df, x = qx_var, colors=c("#d53e4f", 
-      "#08519c", "#fcc5c0", "#9ecae1"))
-    #cadd38 max
-    plot <- plot %>% add_trace(y = qy1_var, type = 'scatter',
-                               name="GRCh38 max",
-                               mode = 'lines',
-                               line = list(color = 'rgb(37, 37, 37)',
-                                           width = 2), legendgroup = 'group1')
-    # # cadd38 mean
-    plot <- plot %>% add_trace(y = qy2_var, type = 'scatter',
-                               name="GRCh38 mean",
-                               mode = 'lines',
-                               line = list(color = 'rgb(37, 37, 37)',
-                                           dash = 'dot', width = 1), legendgroup = 'group1')
-    # # cadd37 max
-    plot <- plot %>% add_trace(y = qy3_var, type = 'scatter',
-                               name="GRCh37 max",
-                               mode = 'lines',
-                               line = list(color = 'rgb(189,189,189)',
-                                           width = 2), legendgroup = 'group2')
-    # # cadd37 mean
-    plot <- plot %>% add_trace(y = qy4_var, type = 'scatter',
-                               name="GRCh37 mean",
-                               mode = 'lines',
-                               line = list(color = 'rgb(189,189,189)',
-                                           dash='dot', width = 1), legendgroup = 'group2')
-    # # # colored dots
-    plot<- plot %>%  add_markers(size = 5,
-                                 opacity=0.95,
-                                 stroke = I("black"), span = I(1),
-                                 inherit=FALSE,
-                                 y = qy1_var,
-                                 x=qx_var,
-                                 color= qcol_var,
-                                 #text = qckpos_var, 
-                                 hovertemplate = ~paste0("<b>",CKpos,"</b>"),
+  
+  
+  # page 2 downloads #
+  
+  output$downloadProTable2 <- renderUI({
+    req(proteinInfo()) # check if dt = NULL
+    downloadButton("DownloadProteins2", class="btn-default")
+  })
+  output$DownloadProteins2 <- downloadHandler(
+    filename = function() {
+      paste(input$selectGene1,".csv", sep="")
+    },
+    content = function(file) {
+      write.table(proteinInfo(), file, sep =",", quote = T, row.names = F, col.names = T)
+    }, contentType = "text"
+  ) # end downloadhandler
+  
+  output$downloadAaTable2 <- renderUI({
+    req(proaadf()) 
+    downloadButton("DownloadCpDAA2", class="btn-default")
+  })
+  output$DownloadCpDAA2 <- downloadHandler(
+    filename = function() {
+      paste(input$selectGene1, "_CpDAA",".csv", sep="")
+    },
+    content = function(file) {
+      write.table(proaadf(), file, sep =",", quote = T, row.names = F, col.names = T)
+    }, contentType = "text"
+  ) # end downloadhandler
+  
+  
+  
+  ########################### plots ##################
+  makeGroupLines <- function(df, x_var, 
+                             y1_var,  y2_var,
+                             yfathmm_var, yfathmm_mean,
+                             ydann_var, ydann_mean,
+                             ckpos_var, col_var, PROTEINname) {
+    qx_var <- enquo(x_var) # aa pos
+    qy1_var <- enquo(y1_var) # 38 max
+    qy2_var <- enquo(y2_var) # 38 mean
+    qyfathmm_var <- enquo(yfathmm_var) # fathmm max
+    qyfathmm_mean <- enquo(yfathmm_mean) # fathmm mean
+    qydann_var <- enquo(ydann_var) # dann max
+    qydann_mean <- enquo(ydann_mean) # dann mean
+    qckpos_var <- enquo(ckpos_var) 
+    qcol_var <- enquo(col_var) # AAgroup
+    plot1 <- plot_ly(data=df, x = qx_var, colors=c("#d53e4f", "#08519c", "#fcc5c0", "#9ecae1"))
+    plot1 <- plot1 %>% add_trace(y = qy1_var, type = 'scatter',
+                                 name="Max",
+                                 mode = 'lines',
+                                 hoverinfo='none',
+                                 line = list(color = 'rgb(37, 37, 37)',width = 2), 
+                                 showlegend = TRUE,
+                                 legendgroup = 1)
+    plot1 <- plot1 %>% add_trace(y = qy2_var, type = 'scatter',
+                                 name="Mean",
+                                 mode = 'lines',
+                                 line = list(color = 'rgb(189,189,189)', width = 1),
+                                 hoverinfo = "none",
+                                 legendgroup=2,
                                  showlegend=TRUE)
+    plot1<- plot1 %>%  add_markers(size = ~detectedInt,
+                                   opacity=0.8,
+                                   stroke = I("black"), span = I(1),
+                                   inherit=FALSE,
+                                   y = qy1_var,
+                                   x=qx_var,
+                                   color= qcol_var,
+                                   hoverinfo = "text",
+                                   text = ~paste0("<b>",detected," ", CKpos, "</b><br>",
+                                                  "<b>Max: ", "</b>",CADD38.phred.max, " ", 
+                                                  "<b>Mean: ","</b>", CADD38.phred.mean,
+                                                  "<br><b>Reactivity ","</b>", 
+                                                  reactivity.2012, " ",react.threshold.2012,
+                                                  "/",reactivity.2019," ",react.threshold.2019,
+                                                  "<b> Ligandable: ", "</b>",target.label.2012,
+                                                  "<br><b>ClinVar Pathogenic: ", "</b>",
+                                                  overlap.CV.sumIDsPerAA," ", 
+                                                  "<br>", CV.AlleleID),
+                                   showlegend=TRUE,
+                                   legendgroup=3) 
+
+    plot2 <- plot_ly(data=df, x = qx_var, colors=c("#d53e4f", "#08519c", "#fcc5c0", "#9ecae1"))
+    plot2 <- plot2 %>% add_trace(y = qyfathmm_var, type = 'scatter',
+                                 name="Max",
+                                 mode = 'lines',
+                                 line = list(color = 'rgb(37, 37, 37)',width = 2),
+                                 legendgroup=1,
+                                 showlegend=FALSE,
+                                 hoverinfo='none')
+    plot2 <- plot2 %>% add_trace(y = qyfathmm_mean, type = 'scatter',
+                                 name="Mean",
+                                 mode = 'lines',
+                                 line = list(color = 'rgb(189,189,189)', width = 1),
+                                 hoverinfo = "none",
+                                 legendgroup=2,
+                                 showlegend=FALSE)
+    plot2<- plot2 %>%  add_markers(size = ~detectedInt,
+                                   opacity=0.8,
+                                   stroke = I("black"), span = I(1),
+                                   inherit=FALSE,
+                                   y = qyfathmm_var,
+                                   x=qx_var,
+                                   color= qcol_var,
+                                   hoverinfo = "text",
+                                   text = ~paste0("<b>",detected," ", CKpos, "</b><br>",
+                                                  "<b>Max: ", "</b>",fathmmMKL.max, " ", 
+                                                  "<b>Mean: ","</b>", fathmmMKL.mean),
+                                   showlegend=FALSE,
+                                   legendgroup=3)
     
-    plot <- plot %>% layout(title = TITLEplot,
-                            xaxis = xaxis,
-                            yaxis = yaxis,
-                            margin = margin,
-                            autosize = TRUE,
-                            showlegend = TRUE,
-                            hovermode = "x unified",
-                            legend = list(orientation = 'h', y = -0.3)) 
-    return(plot)
+    plot3 <- plot_ly(data=df, x = qx_var, colors=c("#d53e4f", "#08519c", "#fcc5c0", "#9ecae1"))
+    plot3 <- plot3 %>% add_trace(y = qydann_var, type = 'scatter',
+                                 name="Max",
+                                 mode = 'lines',
+                                 line = list(color = 'rgb(37, 37, 37)', width = 2),
+                                 legendgroup=1,
+                                 showlegend=FALSE,
+                                 hoverinfo='none')
+    plot3 <- plot3 %>% add_trace(y = qydann_mean, type = 'scatter',
+                                 name="Mean",
+                                 mode = 'lines',
+                                 line = list(color = 'rgb(189,189,189)', width = 1),
+                                 hoverinfo = "none",
+                                 legendgroup=2,
+                                 showlegend=FALSE)
+    
+    plot3<- plot3 %>%  add_markers(size = ~detectedInt,
+                                   opacity=0.8,
+                                   stroke = I("black"), span = I(1),
+                                   inherit=FALSE,
+                                   y = qydann_var,
+                                   x=qx_var,
+                                   color= qcol_var,
+                                   hoverinfo = "text",
+                                   text = ~paste0("<b>",detected," ", CKpos, "</b><br>",
+                                                  "<b>Max: ", "</b>",DANN.max, " ", 
+                                                  "<b>Mean: ","</b>", DANN.mean),
+                                   showlegend=FALSE,
+                                   legendgroup=3)
+    
+    TITLEplot = paste(PROTEINname, "missense scores for Cysteine & Lysine")
+    margin <- list(autoexpand = TRUE,t = 110,b = 110)
+    
+    yaxis1 <- list(title="CADD", visible=TRUE,
+                   showgrid = FALSE,zeroline = FALSE, showline = FALSE, showticklabels = TRUE
+    ) #range=c(0,55)
+    
+    yaxis2 <- list(title="Fathmm", visible=TRUE,
+                   showgrid = FALSE,zeroline = FALSE, showline = FALSE, showticklabels = TRUE)
+    #range=c(0,1.4))
+    
+    yaxis3 <- list(title="DANN", visible=TRUE,
+                   showgrid = FALSE,zeroline = FALSE, showline = FALSE, showticklabels = TRUE)
+    #range=c(0,1.4))
+    xaxis <- list(title = "Amino acid position",
+                  showline = FALSE,
+                  showgrid = FALSE,
+                  zeroline=FALSE,
+                  showticklabels = TRUE,
+                  mirror=TRUE,
+                  showspikes=TRUE,
+                  spikethickness=1,
+                  spikedash="dot",
+                  spikemode="toaxis+across",
+                  spikesnap="cursor")
+    plot1 <- plot1 %>% layout(
+      yaxis = yaxis1
+      #autosize = TRUE
+    ) 
+    plot2 <- plot2 %>% layout(
+      yaxis = yaxis2
+      #autosize = TRUE
+    ) 
+    plot3 <- plot3 %>% layout(
+      yaxis = yaxis3
+      #autosize = TRUE
+    ) 
+    allPlot <- subplot(plot1, plot2, plot3, 
+                       nrows = 3, 
+                       margin = 0.04, 
+                       shareX=TRUE, 
+                       shareY=FALSE,
+                       titleY=TRUE)
+    allPlot <- allPlot %>% layout(xaxis=xaxis,
+                                  title=TITLEplot,
+                                  margin = margin,
+                                  hovermode = "closest",
+                                  hoverdistance=-1,
+                                  spikedistance=-1,
+                                  showlegend = TRUE,
+                                  legend = list(orientation = 'h', y = -0.3))
+    return(allPlot)
   }
   
+  output$linePlots <- renderPlotly({
+    v2 <- makeGroupLines(proaadf(), matched.aapos,
+                        CADD38.phred.max, CADD38.phred.mean, 
+                        fathmmMKL.max, fathmmMKL.mean, 
+                        DANN.max, DANN.mean,
+                        CKpos, AAgroup,
+                        isolate(input$selectGene1))
+    
+    v2})
   
-  # [2] for dann and fathmm ck combo plots
-  makeLinePlots1assembly <- function(df, x_var, y1_var, y2_var, ckpos_var, col_var, PROTEINname, SCOREname) {
-    qx_var <- enquo(x_var)
-    qy1_var <- enquo(y1_var)
-    qy2_var <- enquo(y2_var)
-    qckpos_var <- enquo(ckpos_var)
-    qcol_var <- enquo(col_var)
-    
-    TITLEplot = paste("AA-level summary of",
-                      SCOREname, "scores for", PROTEINname)
-    
-    yaxis <- list(title = SCOREname,
-                  showgrid = FALSE,zeroline = FALSE,showline = FALSE,
-                  showticklabels = TRUE)
-    
-    margin <- list(autoexpand = TRUE,t = 110, b=110)
-    
-    xaxis <- list(title = "AA position",showline = FALSE,
-                  showgrid = FALSE,zeroline=FALSE,showticklabels = TRUE)
-    
-    plot <- plot_ly(data=df, x = qx_var, colors=c("#d53e4f", 
-      "#08519c", "#fcc5c0", "#9ecae1"))
-    
-    plot <- plot %>% add_trace(y = qy1_var, type = 'scatter',
-                               name="Max",
-                               mode = 'lines',
-                               line = list(color = 'rgb(37, 37, 37)',
-                                           width = 2))
-    
-    plot <- plot %>% add_trace(y = qy2_var, type = 'scatter',
-                               name="Mean",
-                               mode = 'lines',
-                               line = list(color = 'rgb(37, 37, 37)',
-                                           dash = 'dot', width = 1))
-    
-    # # # colored dots
-    plot<- plot %>%  add_markers(size = 5,
-                                 opacity=0.95,
-                                 stroke = I("black"), span = I(1),
-                                 inherit=FALSE,
-                                 y = qy2_var,
-                                 x=qx_var,
-                                 color= qcol_var,
-                                 #text = qckpos_var,
-                                 hovertemplate = ~paste0("<b>",CKpos,"</b>"),
-                                 showlegend=TRUE)
-    
-    
-    plot <- plot %>% layout(title = TITLEplot,
-                            xaxis = xaxis,
-                            yaxis = yaxis,
-                            margin = margin,
-                            autosize = TRUE,
-                            showlegend = TRUE,
-                            hovermode = "x unified",
-                            legend = list(orientation = 'h', y = -0.3))
-    return(plot)
-  }
-
-
-  # [3] CADD CK specific line plots
-  makeLinePlotsCK <- function(df, x_var, y_var,line_var, aa_var, PROTEINname, SCOREname) {
-    xvar <- enquo(x_var)
-    yvar <- enquo(y_var)
-    linevar <- enquo(line_var)
-    aavar <- enquo(aa_var)
-    
-    TITLEplot = paste("Cysteine & Lysine mean", SCOREname, "scores for", PROTEINname)
-    
-    yaxis <- list(title = SCOREname, showgrid = FALSE, zeroline = FALSE, showline = FALSE, 
-                  showticklabels = TRUE)
-    
-    margin <- list(autoexpand = TRUE, t = 110, b=110)
-    
-    xaxis <- list(title = "AA position",showline = FALSE,
-                  showgrid = FALSE,zeroline=FALSE,showticklabels = TRUE)
-    
-    ck <- plot_ly(data=df, x = xvar, 
-                  colors=c("#d53e4f", # det c
-                    "#08519c", # det k
-                    "#fcc5c0", # undet c
-                    "#9ecae1")) # undetk
-
-    ck <- ck %>% 
-      add_trace(y=yvar, color=linevar, type='scatter', mode='lines',
-                line=list(width=1), hoverinfo="none")
-    
-    #RAW CADD
-    if(SCOREname == "CADD38 RAW"){
-      ck <- ck %>% add_markers(size = ~inClinVar.5.10,
-                               opacity=0.95,
-                               stroke = I("black"), span = I(1),
-                               x=xvar,
-                               y=yvar,
-                               inherit=FALSE,
-                               color=aavar,  
-                               hoverinfo = "text",
-                               text = ~paste0("<b>",AAgroup," ",CKpos,"</b><br><br>",
-                                              "Max score: ", CADD38.raw.max,
-                                              "<br>Mean score: ", CADD38.raw.mean,
-                                              "<br>Reactivity: ",reactivity.2012,
-                                              "<br>ClinVar patho&likelypatho AA overlap: ", overlap.CV.sumIDsPerAA,
-                                              "<br>ClinVar IDs: ", CV.AlleleID))
-    }
-    #PHRED CADD
-    if(SCOREname == "CADD38 PHRED"){
-      ck <- ck %>% add_markers(size = ~inClinVar.5.10,
-                               opacity=0.95,
-                               stroke = I("black"), span = I(1),
-                               x=xvar,
-                               y=yvar,
-                               inherit=FALSE,
-                               color=aavar,  
-                               hoverinfo = "text",
-                               text = ~paste0("<b>", AAgroup, " ", CKpos, "</b><br><br>",
-                                              "Max score: ", CADD38.phred.max,
-                                              "<br>Mean score: ", CADD38.phred.mean,
-                                              "<br>Reactivity: ",reactivity.2012,
-                                              "<br>ClinVar patho&likelypatho AA overlap: ", overlap.CV.sumIDsPerAA,
-                                              "<br>ClinVar IDs: ", CV.AlleleID))
-    }
-    #FATHMM
-    if(SCOREname == "FATHMM-mkl"){
-      ck <- ck %>% add_markers(size = ~inClinVar.5.10,
-                               opacity=0.95,
-                               stroke = I("black"), span = I(1),
-                               x=xvar,
-                               y=yvar,
-                               inherit=FALSE,
-                               color=aavar,  
-                               hoverinfo = "text",
-                               text = ~paste0("<b>", AAgroup, " ", CKpos, "</b><br><br>",
-                                              "Max score: ", fathmmMKL.max,
-                                              "<br>Mean score: ", fathmmMKL.mean,
-                                              "<br>Reactivity: ",reactivity.2012,
-                                              "<br>ClinVar patho&likelypatho AA overlap: ", overlap.CV.sumIDsPerAA,
-                                              "<br>ClinVar IDs: ", CV.AlleleID))
-    }
-    #DANN
-    if(SCOREname == "DANN"){
-      ck <- ck %>% add_markers(size = ~inClinVar.5.10,
-                               opacity=0.95,
-                               stroke = I("black"), span = I(1),
-                               x=xvar,
-                               y=yvar,
-                               inherit=FALSE,
-                               color=aavar, 
-                               hoverinfo = "text",
-                               text = ~paste0("<b>", AAgroup, " ", CKpos, "</b><br><br>",
-                                              "Max score: ", DANN.max,
-                                              "<br>Mean score: ", DANN.mean,
-                                              "<br>Reactivity: ",reactivity.2012,
-                                              "<br>ClinVar patho&likelypatho AA overlap: ", overlap.CV.sumIDsPerAA,
-                                              "<br>ClinVar IDs: ", CV.AlleleID))
-                               
-                               
-    }
-    ck <- ck %>% layout(title = TITLEplot,
-                        xaxis = xaxis,
-                        yaxis = yaxis,
-                        margin = margin,
-                        autosize = TRUE,
-                        legend = list(orientation = 'h', y = -0.3,
-                                      legendgroup="",
-                                      font = list(family = "sans-serif", 
-                                                  size = 12, color = "#000")))
-    
-                                     #  bgcolor = "#E2E2E2")), bordercolor = "black",borderwidth = 1))
-    return(ck)
-  }
-  
-  
-
-  ####### CADD PLOTLY 1
-  output$caddPlotly1 <- renderPlotly({
-    if(input$caddTypeInput == "Raw"){
-      if(input$lineTypeCADD == "Combo"){
-        cadd <- makeCaddLines(proaadf(), matched.aapos, CADD38.raw.max,
-                              CADD38.raw.mean, CADD37.raw.max,
-                              CADD37.raw.mean, CKpos, AAgroup,
-                              input$selectGene1, "CADD RAW")
-       }
-      if(input$lineTypeCADD == "CK-specific"){
-        cadd <- makeLinePlotsCK(proaadf(), matched.aapos, CADD38.raw.mean,
-                                aaref, AAgroup,
-                                input$selectGene1, "CADD38 RAW")
-      }
-    } # end raw
-    if(input$caddTypeInput == "PHRED"){
-      if(input$lineTypeCADD == "Combo"){
-        cadd <- makeCaddLines(proaadf(), matched.aapos, CADD38.phred.max,
-                              CADD38.phred.mean, CADD37.phred.max,
-                              CADD37.phred.mean, CKpos, AAgroup,
-                              input$selectGene1, "CADD PHRED")
-      }
-      if(input$lineTypeCADD == "CK-specific"){
-        cadd <- makeLinePlotsCK(proaadf(), matched.aapos, CADD38.phred.mean,
-                                  aaref, AAgroup,
-                                  input$selectGene1, "CADD38 PHRED")
-      }
-    } # end phred
-    cadd
-  })
-
-  # ###### FATHMM PLOTLY 1
-  output$fathmmPlotly1 <- renderPlotly({
-    if(input$lineTypeFathmm == "Combo"){
-      fathmm <- makeLinePlots1assembly(proaadf(), matched.aapos, fathmmMKL.max,
-                                       fathmmMKL.mean, CKpos, AAgroup,
-                                       input$selectGene1, "FATHMM-mkl")
-    }
-    if(input$lineTypeFathmm == "CK-specific"){
-      fathmm <- makeLinePlotsCK(proaadf(), matched.aapos, fathmmMKL.mean,
-                                aaref, AAgroup,
-                                input$selectGene1, "FATHMM-mkl")
-    }
-    fathmm
-  })
-
-  # ######## DANN PLOTLY 1
-  output$dannPlotly1 <- renderPlotly({
-    if(input$lineTypeDann == "Combo"){
-      dann <- makeLinePlots1assembly(proaadf(), matched.aapos,
-                                     DANN.max, DANN.mean,
-                                     CKpos, AAgroup,input$selectGene1, "DANN")
-    }
-    if(input$lineTypeDann == "CK-specific"){
-      dann <- makeLinePlotsCK(proaadf(), matched.aapos, DANN.mean,
-                         aaref, AAgroup,
-                         input$selectGene1, "DANN")
-    }
-    dann
-  })
-
 #######################################
-
-
+  
+  output$welcomeLink <- renderUI({
+      isolate({
+        actionButton('switchTab1', label = "GO TO PLOTS", class="btn-basic")
+      })
+  })
+  
+  output$lineplotsLink <- renderUI({
+      isolate({
+        actionButton('switchTab2', label = "BACK TO WELCOME", class="btn-basic")
+      })
+  })
+  
+  observeEvent(input$switchTab1, {
+    newtab <- switch(input$menu1, "Welcome" = "aalevel1","aalevel1" = "Welcome")
+    updateTabItems(session, "menu1", newtab)
+  })
+  
+  observeEvent(input$switchTab2, {
+    newtab <- switch(input$menu1, "aalevel1" = "Welcome","Welcome" = "aalevel1")
+    updateTabItems(session, "menu1", newtab)
+  })
+  
 })
 ### END shiny server ###
