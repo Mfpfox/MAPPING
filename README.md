@@ -1,8 +1,12 @@
 ## ChemoProteomic-Detected Amino Acids (CpDAAs) mapped to missense pathogenicity predictions and ClinVar pathogenic variants
 
+**Visit the [CpDAA shiny app](http://mfpalafox.shinyapps.io/CpDAA) to visualize deleteriousness scores and ClinVar mutation overlap for cysteine and lysine residues in 4,526 chemoproteomic-detected proteins. Link to manuscript [here](https://www.biorxiv.org/content/10.1101/2020.07.03.186007v1).** 
+
+---
+---
 ---
 
-### Protocol for mapping CpDAA-
+### Protocol for mapping CpDAA:
 
 #### [STEP 1] Pre-processing of published cysteine and lysine chemoproteomic datasets
 *Combining quantitative chemoproteomics studies for meta-analysis is hindered by inter-study variability in experimental design and data normalization and quantification pipelines. Additionally, differences in available meta-data and file formats from chemoproteomic studies limits automated large-scale integration. Therefore, the legacy cysteine isoTOP-ABPP and the dataset from 2019 were kept separate for reactivity and missense pathogenicity analysis.*
