@@ -14,8 +14,8 @@ addResourcePath("vid", directoryPath = './www')
 trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 
 header <- dashboardHeader(
-  title = "CpDAA", 
-  titleWidth = 200
+  title = "Menu", 
+  titleWidth = 150
 )
 
 sidebar <- dashboardSidebar( 
@@ -49,6 +49,10 @@ body <- dashboardBody(
             ), # end row
             
             fluidRow(
+              br()
+            ),
+            
+            fluidRow(
               box(solidHeader = F, collapsible = F, collapsed = F,
                   width = 6,
                   column(12, align="center",
@@ -72,60 +76,59 @@ body <- dashboardBody(
               box(solidHeader = F, collapsible = F, collapsed = F,
                   width = 6,
                   column(12,
-                         br(),
-                         br(),
                          h2("Annotated CpDAA Counts"),
                          DT::dataTableOutput("countTable"),
-                         br(),
-                         br(),
                          br(),
                          br(),
                          h2("Genetic-Annotation Sources"),
                          DT::dataTableOutput("AnnoTable"),
                          br(),
-                         br(),
-                         br(),
                          br()
-                  ) # end col
+                  ), # end col
+                  column(12,
+                         box(solidHeader = F, collapsible = F, collapsed = F,
+                             width=12, 
+                             column(12, align="center",
+                                    h4("CpDAA App is currently in development (Version 1.0)"),
+                                    h4("Contact: ", a("mfpalafox@ucla.edu", href="mfpalafox@ucla.edu")),
+                                    h4("Manuscript under review: ", a("From Chemoproteomic-Detected Amino Acids to Genomic Coordinates: Insights into Precise Multi-omic Data Integration", href="https://www.biorxiv.org/content/10.1101/2020.07.03.186007v2"))
+                             )
+                         ) # end box
+                         ) # end col
+                  
                   ) # end box
               ), # end row
             
-            # fluidRow(
-            #   br()
-            # ),
+            fluidRow(
+              br()
+            ),
             
             fluidRow(
               box(title = "PDB Structures", solidHeader = T, collapsible = T, collapsed = F, width=12, 
                   column(6, align="center",
                          h2("Caspase-8 structure analysis of CpD Cysteines"),
                          h4("Color set as max missense CADD score per codon"),
-                         br(),
                          tags$video(src="vid/CASP8_CADD38max_blues_hires.mp4",
-                                    width="750px", height="500px",
-                                    type="video/mp4", controls="controls"), 
-                         br(),
-                         br()
+                                    width="700px", height="450px",
+                                    type="video/mp4", controls="controls")
                          
                   ),
                   column(6, align="center",
                          h2("Glucose-6-phosphate dehydrogenase structure analysis of CpD Lysines"),
                          h4("Color set as max missense CADD score per codon"),
-                         br(),
                          tags$video(src="vid/G6PD_CADD38max_blue_hiRes.mp4",
-                                    width="750px", height="500px",
-                                    type="video/mp4", controls="controls"), 
-                         br(),
-                         br()
+                                    width="700px", height="450px",
+                                    type="video/mp4", controls="controls")
                   ) # end col
               )# outer most box
             ), # end row
             
-            # fluidRow(
-            #   br()
-            # ),
+            fluidRow(
+              br()
+            ),
             
             fluidRow(
-              box(title="Annotated Datasets", solidHeader = T, collapsible = T, collapsed = F, width=12, 
+              box(title="Supplemental Data", solidHeader = T, collapsible = T, collapsed = F, width=12, 
               tabBox(width = 12,
                 id = "databaseTabs", height = "250px",
                 tabPanel(h2("Proteins"), 
@@ -161,17 +164,6 @@ body <- dashboardBody(
               ) # tab box
               ) # end box
             ), # end row
-            
-            fluidRow(
-              box(solidHeader = F, collapsible = F, collapsed = F,
-                  width=6, 
-                  column(12, 
-                         h4("CpDAA App is currently in development (Version 1.0)"),
-                         h4("Contact email: ", a("mfpalafox@ucla.edu", href="mfpalafox@ucla.edu")),
-                         h4("If you find CpDAA App useful please cite our work, ", a("From Chemoproteomic-Detected Amino Acids to Genomic Coordinates: Insights into Precise Multi-omic Data Integration", href="https://www.biorxiv.org/content/10.1101/2020.07.03.186007v2"))
-                  )
-              ) # end box
-            ),
             br(),
             br(),
             uiOutput("welcomeLink", align="center"),

@@ -93,7 +93,7 @@ shinyServer(function(input, output, session) {
   ## AA level DF
   aadf <- reactive({
     df <- dataObs$aadf %>% 
-      mutate(AAgroup = factor(AAgroup, levels = c(
+      mutate(AAgroup = factor(AAgroup, levels = c( # TODO dont use col
         "Detected C",
         "Detected K",
         "Undetected C",
@@ -117,7 +117,7 @@ shinyServer(function(input, output, session) {
     df <- aadf() %>% 
       filter(detected == "Detected")
     df <- df %>%
-      select(matched.UKBID,HGNCgene,CKpos,reactivity.2012,react.threshold.2012,reactivity.2019,react.threshold.2019,target.label.2012,CV.AlleleID,overlap.CV.sumIDsPerAA,CADD38.raw.mean,CADD38.raw.max,CADD37.raw.mean,CADD37.raw.max,CADDraw.38minus37.mean,CADDraw.38minus37.max,CADD38.phred.mean,CADD38.phred.max,CADD37.phred.mean,CADD37.phred.max,DANN.mean,DANN.max,fathmmMKL.mean,fathmmMKL.max)
+      select(matched.UKBID,HGNCgene,AApos,reactivity.2012,react.threshold.2012,reactivity.2019,react.threshold.2019,target.label.2012,CV.AlleleID,overlap.CV.sumIDsPerAA,CADD38.raw.mean,CADD38.raw.max,CADD37.raw.mean,CADD37.raw.max,CADDraw.38minus37.mean,CADDraw.38minus37.max,CADD38.phred.mean,CADD38.phred.max,CADD37.phred.mean,CADD37.phred.max,DANN.mean,DANN.max,fathmmMKL.mean,fathmmMKL.max)
     df
   },
   options = list(scrollX = TRUE, columnDefs = list(list(targets = "_all")),
@@ -146,7 +146,7 @@ shinyServer(function(input, output, session) {
                  pageLength = 5)
   )
 
-
+# select only 1 protin by gene UKB ID column for line plots
   proaadf <- eventReactive(input$aasubmit1 , {
     gsym = as.character(trim(input$selectGene1))
     ukb <- aadf() %>% 
@@ -154,7 +154,7 @@ shinyServer(function(input, output, session) {
     return(ukb)
   })
 
-
+# table of lineplot data
   output$aa2Table <- DT::renderDataTable({
     proaadf()
   },
@@ -235,11 +235,29 @@ shinyServer(function(input, output, session) {
   
   
   ########################### plots ##################
+  # makeGroupLines(proaadf(), matched.aapos,
+  #                       CADD38.phred.max, CADD38.phred.mean, 
+  #                       fathmmMKL.max, fathmmMKL.mean, 
+  #                       DANN.max, DANN.mean,
+  #                       AApos, AAgroup,
+  #                       isolate(input$selectGene1))
+
   makeGroupLines <- function(df, x_var, 
                              y1_var,  y2_var,
                              yfathmm_var, yfathmm_mean,
                              ydann_var, ydann_mean,
                              ckpos_var, col_var, PROTEINname) {
+
+
+    # ALL LETTERS DF HAS FOLLOWING COLUMNS: 
+    # matched.aapos,
+    # missingScores (False, True values)
+  # CADD38.phred.max, CADD38.phred.mean, 
+  # fathmmMKL.max, fathmmMKL.mean, 
+  # DANN.max, DANN.mean,
+  # AApos, AAgroup
+
+    # VARIABLES FOR CK POSITION FILE ONLY
     qx_var <- enquo(x_var) # aa pos
     qy1_var <- enquo(y1_var) # 38 max
     qy2_var <- enquo(y2_var) # 38 mean
@@ -249,7 +267,15 @@ shinyServer(function(input, output, session) {
     qydann_mean <- enquo(ydann_mean) # dann mean
     qckpos_var <- enquo(ckpos_var) 
     qcol_var <- enquo(col_var) # AAgroup
+
+    # make plot qx match all letters
+    # qy1 update match all letters
+    # qy2
+    # df is ck dataset
+
+
     plot1 <- plot_ly(data=df, x = qx_var, colors=c("#d53e4f", "#08519c", "#fcc5c0", "#9ecae1"))
+
     plot1 <- plot1 %>% add_trace(y = qy1_var, type = 'scatter',
                                  name="Max",
                                  mode = 'lines',
@@ -257,6 +283,7 @@ shinyServer(function(input, output, session) {
                                  line = list(color = 'rgb(37, 37, 37)',width = 2), 
                                  showlegend = TRUE,
                                  legendgroup = 1)
+
     plot1 <- plot1 %>% add_trace(y = qy2_var, type = 'scatter',
                                  name="Mean",
                                  mode = 'lines',
@@ -264,6 +291,7 @@ shinyServer(function(input, output, session) {
                                  hoverinfo = "none",
                                  legendgroup=2,
                                  showlegend=TRUE)
+
     plot1<- plot1 %>%  add_markers(size = ~detectedInt,
                                    opacity=0.8,
                                    stroke = I("black"), span = I(1),
@@ -272,7 +300,7 @@ shinyServer(function(input, output, session) {
                                    x=qx_var,
                                    color= qcol_var,
                                    hoverinfo = "text",
-                                   text = ~paste0("<b>",detected," ", CKpos, "</b><br>",
+                                   text = ~paste0("<b>",detected," ", AApos, "</b><br>",
                                                   "<b>Max: ", "</b>",CADD38.phred.max, " ", 
                                                   "<b>Mean: ","</b>", CADD38.phred.mean,
                                                   "<br><b>Reactivity ","</b>", 
@@ -285,7 +313,9 @@ shinyServer(function(input, output, session) {
                                    showlegend=TRUE,
                                    legendgroup=3) 
 
+
     plot2 <- plot_ly(data=df, x = qx_var, colors=c("#d53e4f", "#08519c", "#fcc5c0", "#9ecae1"))
+
     plot2 <- plot2 %>% add_trace(y = qyfathmm_var, type = 'scatter',
                                  name="Max",
                                  mode = 'lines',
@@ -293,6 +323,7 @@ shinyServer(function(input, output, session) {
                                  legendgroup=1,
                                  showlegend=FALSE,
                                  hoverinfo='none')
+
     plot2 <- plot2 %>% add_trace(y = qyfathmm_mean, type = 'scatter',
                                  name="Mean",
                                  mode = 'lines',
@@ -300,6 +331,7 @@ shinyServer(function(input, output, session) {
                                  hoverinfo = "none",
                                  legendgroup=2,
                                  showlegend=FALSE)
+
     plot2<- plot2 %>%  add_markers(size = ~detectedInt,
                                    opacity=0.8,
                                    stroke = I("black"), span = I(1),
@@ -308,13 +340,15 @@ shinyServer(function(input, output, session) {
                                    x=qx_var,
                                    color= qcol_var,
                                    hoverinfo = "text",
-                                   text = ~paste0("<b>",detected," ", CKpos, "</b><br>",
+                                   text = ~paste0("<b>",detected," ", AApos, "</b><br>",
                                                   "<b>Max: ", "</b>",fathmmMKL.max, " ", 
                                                   "<b>Mean: ","</b>", fathmmMKL.mean),
                                    showlegend=FALSE,
                                    legendgroup=3)
     
+
     plot3 <- plot_ly(data=df, x = qx_var, colors=c("#d53e4f", "#08519c", "#fcc5c0", "#9ecae1"))
+
     plot3 <- plot3 %>% add_trace(y = qydann_var, type = 'scatter',
                                  name="Max",
                                  mode = 'lines',
@@ -322,6 +356,7 @@ shinyServer(function(input, output, session) {
                                  legendgroup=1,
                                  showlegend=FALSE,
                                  hoverinfo='none')
+
     plot3 <- plot3 %>% add_trace(y = qydann_mean, type = 'scatter',
                                  name="Mean",
                                  mode = 'lines',
@@ -338,12 +373,14 @@ shinyServer(function(input, output, session) {
                                    x=qx_var,
                                    color= qcol_var,
                                    hoverinfo = "text",
-                                   text = ~paste0("<b>",detected," ", CKpos, "</b><br>",
+                                   text = ~paste0("<b>",detected," ", AApos, "</b><br>",
                                                   "<b>Max: ", "</b>",DANN.max, " ", 
                                                   "<b>Mean: ","</b>", DANN.mean),
                                    showlegend=FALSE,
                                    legendgroup=3)
     
+
+
     TITLEplot = paste(PROTEINname, "missense scores for Cysteine & Lysine")
     margin <- list(autoexpand = TRUE,t = 110,b = 110)
     
@@ -398,12 +435,13 @@ shinyServer(function(input, output, session) {
     return(allPlot)
   }
   
+  # func call
   output$linePlots <- renderPlotly({
     v2 <- makeGroupLines(proaadf(), matched.aapos,
                         CADD38.phred.max, CADD38.phred.mean, 
                         fathmmMKL.max, fathmmMKL.mean, 
                         DANN.max, DANN.mean,
-                        CKpos, AAgroup,
+                        AApos, AAgroup,
                         isolate(input$selectGene1))
     
     v2})
