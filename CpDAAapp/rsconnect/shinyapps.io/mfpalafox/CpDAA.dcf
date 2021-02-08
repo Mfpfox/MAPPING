@@ -1,0 +1,13 @@
+name: CpDAA
+title: CpDAA
+username:
+account: mfpalafox
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3226888
+bundleId: 4195117
+url: https://mfpalafox.shinyapps.io/CpDAA/
+when: 1612775700.02984
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: www/.DS_Store
