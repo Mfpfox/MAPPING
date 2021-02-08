@@ -19,12 +19,14 @@ library(RColorBrewer)
 library(plotly)
 library(tidyr)
 
+
 ## trim function used for comparision group names' processing
 trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 
 
 ## Uploading file's size requirement (<500MB)
 options(shiny.maxRequestSize = 500*1024^2)
+
 
 shinyServer(function(input, output, session) {
 # START observing data  ###############

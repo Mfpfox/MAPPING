@@ -7,11 +7,14 @@ library(ggplot2)
 library(gplots)
 library(grDevices)
 library(plotly)
+library(shinybusy)
+
 # run in r console
 # library(rsconnect)
 # rsconnect::deployApp('path/to/your/app')
 addResourcePath("vid", directoryPath = './www')
 trim <- function (x) gsub("^\\s+|\\s+$", "", x)
+
 
 header <- dashboardHeader(
   title = "Menu", 
@@ -28,6 +31,7 @@ sidebar <- dashboardSidebar(
   ) # end dashboard
 
 body <- dashboardBody(
+  add_busy_spinner(spin = "cube-grid", margins = c(0, 10), color = "#FFF"),
   ### changing theme
   shinyDashboardThemes(
     theme = "grey_dark" #blue_gradient grey_light
