@@ -34,7 +34,7 @@ body <- dashboardBody(
   add_busy_spinner(spin = "cube-grid", margins = c(0, 10), color = "#FFF"),
   ### changing theme
   shinyDashboardThemes(
-    theme = "grey_dark" #blue_gradient grey_light
+    theme = "grey_dark" #blue_gradient grey_light # grey_dark
   ),
 
   tabItems(
@@ -57,10 +57,11 @@ body <- dashboardBody(
             ),
             
             fluidRow(
-              box(solidHeader = F, collapsible = F, collapsed = F,
+              box(title = "Workflow",
+                  solidHeader = T, collapsible = T, collapsed = F,
                   width = 6,
                   column(12, align="center",
-                         h2("Manual Curation Workflow for Chemoproteomic-Detected Proteins"), 
+                         h2("Manual Curation of Chemoproteomic-Detected Proteins"), 
                          br(),
                          div(img(img(src ="workflow_shiny.png", height = "400", width = "500")), 
                          style="text-align: center"), 
@@ -77,10 +78,11 @@ body <- dashboardBody(
                          ) # end col
                   ), # end box
               
-              box(solidHeader = F, collapsible = F, collapsed = F,
+              box(title = "Summary",
+                  solidHeader = T, collapsible = T, collapsed = F,
                   width = 6,
                   column(12,
-                         h2("Annotated CpDAA Counts"),
+                         h2("Total CpDAAs"),
                          DT::dataTableOutput("countTable"),
                          br(),
                          h2("Genetic-Annotation Sources"),
@@ -93,7 +95,7 @@ body <- dashboardBody(
                              column(12, align="center",
                                     h4("CpDAA App Version 1.0"),
                                     h4("Contact: ", a("mfpalafox@ucla.edu", href="mfpalafox@ucla.edu")),
-                                    h4("Manuscript under review: ", a("From Chemoproteomic-Detected Amino Acids to Genomic Coordinates: Insights into Precise Multi-omic Data Integration", href="https://www.biorxiv.org/content/10.1101/2020.07.03.186007v2"))
+                                    h4("Manuscript ", a("From Chemoproteomic-Detected Amino Acids to Genomic Coordinates: Insights into Precise Multi-omic Data Integration", href="https://www.biorxiv.org/content/10.1101/2020.07.03.186007v2"))
                              )
                          ) # end box
                          ) # end col
@@ -106,17 +108,18 @@ body <- dashboardBody(
             ),
             
             fluidRow(
-              box(
-                solidHeader = F, collapsible = T, collapsed = F,
+              box(title = "Select Protein",
+                  solidHeader = T,
+                 collapsible = T, collapsed = F,
                 width = 12,
                 column(4,
                        h2("Analysis of CpDAA in 4,526 ChemoProteomic-Detected Proteins", style = "color: white"),
-                       selectizeInput("selectGene1", "Select Gene or UniProtKB Protein ID", choices=NULL, 
-                                      options = list(placeholder = "Search gene",
+                       selectizeInput("selectGene1", "Search Gene or UniProtKB Protein ID", choices=NULL,
+                                      options = list(placeholder = "TP53 P04637",
                                                      maxOptions = 4600)),
                        br(),
                        actionButton(inputId = "aasubmit1", # event reactive
-                                    label = "Submit"),
+                                    label = "PLOT"),
                        tags$style("button#aasubmit1 {margin-left:auto;margin-right:auto;display:block;background-color:#EAEAEA; font-family:Andika, Arial, sans-serif; font-size:1em; letter-spacing:0.05em; text-transform:uppercase ;color:#000; text-shadow: 0px 1px 1px #00FFFF;box-shadow: 1px 1px 1px #000;}"),
                        br(),
                        br()
@@ -166,8 +169,8 @@ body <- dashboardBody(
             ), # end fluidRow
             # FATHMM
             fluidRow(
-              box(title = "FATHMM",
-                  solidHeader = T, collapsible = T, collapsed = F,
+              box(title = "Fathmm-MKL Coding Score",
+                  solidHeader = T, collapsible = T, collapsed = T,
                   width = 12, 
                   column(12, align="center",
                          plotlyOutput("fathmmPlotly1") 
@@ -176,8 +179,8 @@ body <- dashboardBody(
             ), # end fluidRow
             # DANN
             fluidRow(
-              box(title = "DANN",
-                  solidHeader = T, collapsible = T, collapsed = F,
+              box(title = "DANN Score",
+                  solidHeader = T, collapsible = T, collapsed = T,
                   width = 12, 
                   column(12, align="center",
                          plotlyOutput("dannPlotly1") 
