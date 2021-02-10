@@ -1,12 +1,6 @@
 .Rhistory
-EMBO_resubmission/*
-CpDAAapp/*
-BEST_PRACTICE/Pmap_CADDoutput_chemo_cys2019.py
-BEST_PRACTICE/Pmap5_CADDoutput_chemoproteomics.py 
-AAPOSITIONS/*
 *.bed
 *.Rmd
-README_MARKDOWNS/*
 .DS_Store
 *.html
 *.ipynb
@@ -32,3 +26,9 @@ README_MARKDOWNS/*
 *.pptx
 *.cif
 .Rproj.user
+EMBO_resubmission/*
+CpDAAapp/*
+BEST_PRACTICE/*                                  
+AAPOSITIONS/*
+README_MARKDOWNS/*
+
