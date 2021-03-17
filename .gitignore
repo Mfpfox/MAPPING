@@ -1,3 +1,4 @@
+*.jpg
 .Rhistory
 *.bed
 *.Rmd
