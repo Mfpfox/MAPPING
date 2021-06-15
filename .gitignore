@@ -28,6 +28,7 @@
 *.cif
 .Rproj.user
 EMBO_resubmission/*
+CpDAAapp
 CpDAAapp/*
 BEST_PRACTICE/*                                  
 AAPOSITIONS/*
