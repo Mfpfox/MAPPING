@@ -2,12 +2,13 @@
 # -*- coding: utf-8 -*-
 
 from maplib import *
-# Pmap_CADDoutput_chemo_cys2019.py is specific to Heta's data
-
-# TODO
+# Pmap_CADDoutput_chemo2019.py is version of this script but specific to processing 2019 cys isoTOP
+"""
+TODO
 - add raw scores
 - made modular to accept file with names column instead of hard code 
 - add file merging step 
+"""
 
 def filterCADDoutput():
     inlist = ["chr10_CADD19_to_dbNSFP.csv","chr11_CADD19_to_dbNSFP.csv","chr12_CADD19_to_dbNSFP.csv","chr13_CADD19_to_dbNSFP.csv","chr14_CADD19_to_dbNSFP.csv","chr15_CADD19_to_dbNSFP.csv","chr16_CADD19_to_dbNSFP.csv","chr17_CADD19_to_dbNSFP.csv","chr18_CADD19_to_dbNSFP.csv","chr19_CADD19_to_dbNSFP.csv","chr1_CADD19_to_dbNSFP.csv","chr20_CADD19_to_dbNSFP.csv","chr21_CADD19_to_dbNSFP.csv","chr22_CADD19_to_dbNSFP.csv","chr2_CADD19_to_dbNSFP.csv","chr3_CADD19_to_dbNSFP.csv","chr4_CADD19_to_dbNSFP.csv","chr5_CADD19_to_dbNSFP.csv","chr6_CADD19_to_dbNSFP.csv","chr7_CADD19_to_dbNSFP.csv","chr8_CADD19_to_dbNSFP.csv","chr9_CADD19_to_dbNSFP.csv","chrX_CADD19_to_dbNSFP.csv","chrY_CADD19_to_dbNSFP.csv"]

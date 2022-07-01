@@ -8,12 +8,11 @@ import pandas as pd
 import csv
 from statistics import mean 
 
-# P42166 = 188 missing amino acids compared to  ukb protein length
 # only 1/4526 proteins from dbnsfp were missing AAs
 
 # script updates
-## 1. changed max() to np.nanmax() so max and mean DANN Fathmm counts match..previous version of results show more missing values for max than for mean, but max and mean missing are equal for DANN and FATHMM
-## 2. on merge, prev. was "inner" now doing "left" to try and prevent 188 aa lost...maybe all aa lost for one score type but if cadd is present will include in app
+## 1. changed max() to np.nanmax() so max and mean DANN Fathmm counts match. previous version of results show more missing values for max than for mean, but max and mean missing are equal for DANN and FATHMM
+## 2. on merge, prev. was "inner" now doing "left" to prevent 188 aa lost (P42166 = 188 missing amino acids compared to  ukb protein length)
 
 def addcolumnconditional(mapList, df, dfcol, newcol):
     mendel = []

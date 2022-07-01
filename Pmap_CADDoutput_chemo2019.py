@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Pmap_CADDoutput_chemo_cys2019.py
+# Pmap_CADDoutput_chemo2019.py
 
 import pandas as pd
 import os
